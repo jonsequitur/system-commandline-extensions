@@ -1,0 +1,71 @@
+{
+  "upstreamRepository": "https://raw.githubusercontent.com/dotnet/command-line-api",
+  "defaultRef": "main",
+  "notes": [
+    "HelpLine source files and HelpBuilder test coverage are synced from upstream.",
+    "API compatibility approval tests are maintained locally in this repo and are intentionally not synced from upstream."
+  ],
+  "files": [
+    {
+      "upstreamPath": "src/System.CommandLine/Help/HelpBuilder.cs",
+      "destination": "src/HelpLine/Help/HelpBuilder.cs",
+      "replacements": [
+        { "old": "internal partial class HelpBuilder", "new": "public partial class HelpBuilder" }
+      ]
+    },
+    {
+      "upstreamPath": "src/System.CommandLine/Help/HelpBuilder.Default.cs",
+      "destination": "src/HelpLine/Help/HelpBuilder.Default.cs",
+      "replacements": [
+        { "old": "internal partial class HelpBuilder", "new": "public partial class HelpBuilder" }
+      ]
+    },
+    {
+      "upstreamPath": "src/System.CommandLine/Help/HelpContext.cs",
+      "destination": "src/HelpLine/Help/HelpContext.cs",
+      "replacements": [
+        { "old": "internal class HelpContext", "new": "public class HelpContext" }
+      ]
+    },
+    {
+      "upstreamPath": "src/System.CommandLine/Help/TwoColumnHelpRow.cs",
+      "destination": "src/HelpLine/Help/TwoColumnHelpRow.cs",
+      "replacements": [
+        { "old": "internal class TwoColumnHelpRow", "new": "public class TwoColumnHelpRow" }
+      ]
+    },
+    {
+      "upstreamPath": "src/System.CommandLine/Help/HelpBuilderExtensions.cs",
+      "destination": "src/HelpLine/Help/HelpBuilderExtensions.cs",
+      "replacements": []
+    },
+    {
+      "upstreamPath": "src/System.CommandLine.Tests/Help/HelpBuilderTests.cs",
+      "destination": "src/HelpLine.Tests/Help/HelpBuilderTests.cs",
+      "replacements": [
+        { "old": "using FluentAssertions;", "new": "using AwesomeAssertions;" },
+        { "old": "namespace System.CommandLine.Tests.Help", "new": "namespace HelpLine.Tests.Help" }
+      ]
+    },
+    {
+      "upstreamPath": "src/System.CommandLine.Tests/Help/HelpBuilderTests.Customization.cs",
+      "destination": "src/HelpLine.Tests/Help/HelpBuilderTests.Customization.cs",
+      "replacements": [
+        { "old": "using FluentAssertions;", "new": "using AwesomeAssertions;" },
+        { "old": "namespace System.CommandLine.Tests.Help;", "new": "namespace HelpLine.Tests.Help;" }
+      ]
+    },
+    {
+      "upstreamPath": "src/System.CommandLine.Tests/Help/HelpBuilderTests.Approval.cs",
+      "destination": "src/HelpLine.Tests/Help/HelpBuilderTests.Approval.cs",
+      "replacements": [
+        { "old": "namespace System.CommandLine.Tests.Help", "new": "namespace HelpLine.Tests.Help" }
+      ]
+    },
+    {
+      "upstreamPath": "src/System.CommandLine.Tests/Help/ApprovalTests.Config.cs",
+      "destination": "src/HelpLine.Tests/ApprovalTests.Config.cs",
+      "replacements": []
+    }
+  ]
+}

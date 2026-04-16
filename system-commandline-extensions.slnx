@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src\HelpLine\HelpLine.csproj" />
+  <Project Path="src\HelpLine.Tests\HelpLine.Tests.csproj" />
+</Solution>

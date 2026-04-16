@@ -1,0 +1,83 @@
+﻿HelpLine.Markdown
+  public static class MarkdownHelpExtensions
+    public static HelpLine.Markdown.Commands.HelpCommand AddMarkdownHelp(this System.CommandLine.Command command, System.Reflection.Assembly assembly = null, HelpLine.Markdown.Rendering.MarkdownHelpRenderer renderer = null)
+    public static HelpLine.Markdown.Commands.HelpCommand AddMarkdownHelp(this System.CommandLine.Command command, HelpLine.Markdown.Topics.HelpTopicCatalog catalog, HelpLine.Markdown.Rendering.MarkdownHelpRenderer renderer = null)
+HelpLine.Markdown.Commands
+  public class HelpCommand : System.CommandLine.Command, System.Collections.IEnumerable
+    .ctor(HelpLine.Markdown.Topics.HelpTopicCatalog catalog, HelpLine.Markdown.Rendering.MarkdownHelpRenderer renderer = null)
+    public HelpLine.Markdown.Topics.HelpTopicCatalog Catalog { get; }
+    public HelpLine.Markdown.Rendering.MarkdownHelpRenderer Renderer { get; }
+    public HelpLine.Markdown.Options.HelpTopicOption TopicOption { get; }
+HelpLine.Markdown.Options
+  public class HelpTopicOption : System.CommandLine.Option<System.String>
+    .ctor(HelpLine.Markdown.Topics.HelpTopicCatalog catalog = null)
+HelpLine.Markdown.Rendering
+  public class MarkdownHelpRenderer
+    .ctor()
+    public System.Int32 HeadingLevelOffset { get; set; }
+    public System.Void Render(System.String markdown, System.IO.TextWriter writer)
+HelpLine.Markdown.Topics
+  public class HelpTopic, System.IEquatable<HelpTopic>
+    public static System.Boolean op_Equality(HelpTopic left, HelpTopic right)
+    public static System.Boolean op_Inequality(HelpTopic left, HelpTopic right)
+    .ctor(System.String Name, System.String DisplayName, System.String Description, System.String ResourceName)
+    public System.String Description { get; set; }
+    public System.String DisplayName { get; set; }
+    public System.String Name { get; set; }
+    public System.String ResourceName { get; set; }
+    public HelpTopic <Clone>$()
+    public System.Void Deconstruct(ref System.String Name, ref System.String DisplayName, ref System.String Description, ref System.String ResourceName)
+    public System.Boolean Equals(System.Object obj)
+    public System.Boolean Equals(HelpTopic other)
+    public System.Int32 GetHashCode()
+    public System.String ToString()
+  public class HelpTopicCatalog
+    public static HelpTopicCatalog FromAssembly(System.Reflection.Assembly assembly, System.String resourceMarker = .HelpLine.Markdown.Topics.)
+    .ctor(System.Reflection.Assembly assembly, System.Collections.Generic.IEnumerable<HelpTopic> topics)
+    public System.Collections.Generic.IReadOnlyList<HelpTopic> Topics { get; }
+    public System.Boolean TryGetTopic(System.String name, ref HelpTopic topic)
+    public System.Boolean TryReadTopicText(HelpTopic topic, ref System.String markdown)
+System.CommandLine.Help
+  public class CustomHelpAction : System.CommandLine.Invocation.SynchronousCommandLineAction
+    .ctor()
+    public HelpBuilder Builder { get; set; }
+    public System.Boolean ClearsParseErrors { get; }
+    public System.Int32 Invoke(System.CommandLine.ParseResult parseResult)
+  public class HelpBuilder
+    .ctor(System.Int32 maxWidth = 2147483647)
+    public System.Int32 MaxWidth { get; }
+    public System.Void CustomizeLayout(System.Func<HelpContext, System.Collections.Generic.IEnumerable<System.Func<HelpContext, System.Boolean>>> getLayout)
+    public System.Void CustomizeSymbol(System.CommandLine.Symbol symbol, System.Func<HelpContext, System.String> firstColumnText = null, System.Func<HelpContext, System.String> secondColumnText = null, System.Func<HelpContext, System.String> defaultValue = null)
+    public System.Void CustomizeSymbol(System.CommandLine.Symbol symbol, System.String firstColumnText = null, System.String secondColumnText = null, System.String defaultValue = null)
+    public TwoColumnHelpRow GetTwoColumnRow(System.CommandLine.Symbol symbol, HelpContext context)
+    public System.Void Write(HelpContext context)
+    public System.Void Write(System.CommandLine.Command command, System.IO.TextWriter writer)
+    public System.Void WriteColumns(System.Collections.Generic.IReadOnlyList<TwoColumnHelpRow> items, HelpContext context)
+   static class Default
+    public static System.Func<HelpContext, System.Boolean> AdditionalArgumentsSection()
+    public static System.Func<HelpContext, System.Boolean> CommandArgumentsSection()
+    public static System.Func<HelpContext, System.Boolean> CommandUsageSection()
+    public static System.String GetArgumentDefaultValue(System.CommandLine.Symbol symbol)
+    public static System.String GetArgumentDescription(System.CommandLine.Argument argument)
+    public static System.String GetArgumentUsageLabel(System.CommandLine.Symbol parameter)
+    public static System.String GetCommandUsageLabel(System.CommandLine.Command symbol)
+    public static System.Collections.Generic.IEnumerable<System.Func<HelpContext, System.Boolean>> GetLayout()
+    public static System.String GetOptionUsageLabel(System.CommandLine.Option symbol)
+    public static System.Func<HelpContext, System.Boolean> OptionsSection()
+    public static System.Boolean ShouldShowDefaultValue(System.CommandLine.Symbol symbol)
+    public static System.Boolean ShouldShowDefaultValue(System.CommandLine.Option option)
+    public static System.Boolean ShouldShowDefaultValue(System.CommandLine.Argument argument)
+    public static System.Func<HelpContext, System.Boolean> SubcommandsSection()
+    public static System.Func<HelpContext, System.Boolean> SynopsisSection()
+  public class HelpContext
+    .ctor(HelpBuilder helpBuilder, System.CommandLine.Command command, System.IO.TextWriter output)
+    public System.CommandLine.Command Command { get; }
+    public HelpBuilder HelpBuilder { get; }
+    public System.IO.TextWriter Output { get; }
+  public class TwoColumnHelpRow, System.IEquatable<TwoColumnHelpRow>
+    .ctor(System.String firstColumnText, System.String secondColumnText)
+    public System.String FirstColumnText { get; }
+    public System.String SecondColumnText { get; }
+    public System.Boolean Equals(System.Object obj)
+    public System.Boolean Equals(TwoColumnHelpRow other)
+    public System.Int32 GetHashCode()

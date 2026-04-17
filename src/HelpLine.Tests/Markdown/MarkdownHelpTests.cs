@@ -1,16 +1,29 @@
 using System.CommandLine;
-using System.IO;
 using AwesomeAssertions;
 using AwesomeAssertions.Execution;
-using HelpLine.Markdown;
 using HelpLine.Markdown.Rendering;
 using HelpLine.Markdown.Topics;
-using Xunit;
 
-namespace HelpLine.Tests;
+namespace HelpLine.Markdown.Tests;
 
 public class MarkdownHelpTests
 {
+    [Fact]
+    public void Assembly_overload_discovers_topics_from_embedded_resources()
+    {
+        RootCommand rootCommand = new("sample");
+        var helpCommand = rootCommand.AddMarkdownHelp(typeof(MarkdownHelpTests).Assembly, new MarkdownHelpRenderer { HeadingLevelOffset = 0 });
+
+        var output = new StringWriter();
+        var exitCode = rootCommand.Parse("help --topic getting-started").Invoke(new() { Output = output });
+
+        using var scope = new AssertionScope();
+        helpCommand.Should().NotBeNull();
+        exitCode.Should().Be(0);
+        output.ToString().Should().Contain("Getting Started");
+        output.ToString().Should().Contain("install the tool");
+    }
+
     [Fact]
     public void Help_command_lists_and_renders_embedded_topics()
     {

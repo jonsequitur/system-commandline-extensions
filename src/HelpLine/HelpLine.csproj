@@ -3,7 +3,7 @@
     <AssemblyName>HelpLine</AssemblyName>
     <RootNamespace>HelpLine</RootNamespace>
     <PackageId>HelpLine</PackageId>
-    <Description>Unified System.CommandLine help extensions with legacy HelpBuilder compatibility and Markdown-backed topics.</Description>
+    <Description>Help support for System.CommandLine including Markdown-backed rich help topics and legacy HelpBuilder compatibility.</Description>
     <PackageTags>System.CommandLine;Help;CLI;Markdown</PackageTags>
   </PropertyGroup>
 

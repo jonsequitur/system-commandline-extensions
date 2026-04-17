@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Help\**\*.md">
+    <EmbeddedResource Include="System.CommandLine.Help\**\*.md">
       <LogicalName>$(AssemblyName).HelpLine.Markdown.Topics.%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
   </ItemGroup>

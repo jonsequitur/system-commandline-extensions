@@ -1,8 +1,10 @@
 # system-commandline-extensions
 
+[![CI](https://github.com/jonsequitur/system-commandline-extensions/actions/workflows/ci.yml/badge.svg)](https://github.com/jonsequitur/system-commandline-extensions/actions/workflows/ci.yml)
+
 `HelpLine` extends `System.CommandLine` with richer help APIs and Markdown-backed help topics.
 
-## Using Markdown help
+## Markdown-based rich help topics with HelpLine.Markdown
 
 `HelpLine.Markdown` is designed to let you author help topics as Markdown files in your CLI app project, have them embedded at build time, and then expose them through `System.CommandLine` with one API call.
 
@@ -71,9 +73,12 @@ rootCommand.AddMarkdownHelp(typeof(Program).Assembly);
 
 You can also construct and pass a `HelpTopicCatalog` yourself when you want complete control over the topic source and discovery behavior.
 
+## Legacy System.CommandLine `HelpBuilder`
+
+The `HelpBuilder` and associated types were made internal in System.CommandLine 2.0.0 but for the long beta4 period, these types had been public. They're provided here for backwards compatibility, in the `System.CommandLine.Help` namespace. If you're migrating from System.CommandLine beta 4 to 2.0.0+ and you want to keep using the old HelpBuilder to customize your CLI app's help, this library allows you to do so with no code changes.
+
 # Developer Guide
 
-## Upstream sync
 
 Run `eng/Update-HelpCompatFromUpstream.ps1` to refresh the vendored `HelpCompat` files **and the copied `HelpBuilder` test coverage** from the latest `dotnet/command-line-api` source. The API compatibility snapshot tests are intentionally maintained locally in this repo.
 

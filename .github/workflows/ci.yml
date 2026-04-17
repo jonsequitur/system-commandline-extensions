@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERSION_PREFIX: 0.1.0
+  PREVIEW_VERSION_SUFFIX: alpha.${{ github.run_number }}
+
+jobs:
+  build-test:
+    name: Build and test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            global.json
+            src/**/*.csproj
+
+      - name: Restore
+        run: dotnet restore ./system-commandline-extensions.slnx
+
+      - name: Build
+        run: dotnet build ./system-commandline-extensions.slnx --configuration Release --no-restore
+
+      - name: Test
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path ./artifacts/test-results/${{ matrix.os }} | Out-Null
+          dotnet vstest ./src/HelpLine.Tests/bin/Release/net10.0/HelpLine.Tests.dll --logger:"trx;LogFileName=test-results.trx" --ResultsDirectory:./artifacts/test-results/${{ matrix.os }}
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: ./artifacts/test-results/${{ matrix.os }}/**
+
+  pack:
+    name: Pack
+    runs-on: ubuntu-latest
+    needs: build-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: |
+            Directory.Packages.props
+            global.json
+            src/**/*.csproj
+
+      - name: Restore
+        run: dotnet restore ./system-commandline-extensions.slnx
+
+      - name: Build
+        run: dotnet build ./system-commandline-extensions.slnx --configuration Release --no-restore -p:VersionPrefix=${{ env.VERSION_PREFIX }} -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
+
+      - name: Pack preview package
+        run: dotnet pack ./src/HelpLine/HelpLine.csproj --configuration Release --no-build --output ./artifacts -p:VersionPrefix=${{ env.VERSION_PREFIX }} -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
+
+      - name: Publish preview package to GitHub Packages
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          dotnet nuget add source --username "${{ github.actor }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+          dotnet nuget push "./artifacts/*.nupkg" --source github --skip-duplicate
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: HelpLine-package-${{ env.PREVIEW_VERSION_SUFFIX }}
+          path: ./artifacts/*

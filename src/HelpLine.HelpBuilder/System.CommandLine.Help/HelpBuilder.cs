@@ -1,4 +1,4 @@
-// Copyright (c) .NET Foundation and contributors. All rights reserved.
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Collections.Generic;
@@ -6,504 +6,535 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace System.CommandLine.Help;
-
-/// <summary>
-/// Formats output to be shown to users to describe how to use a command line tool.
-/// </summary>
-public partial class HelpBuilder
+namespace System.CommandLine.Help
 {
-    private const string Indent = "  ";
-
-    private Dictionary<Symbol, Customization>? _customizationsBySymbol;
-    private Func<HelpContext, IEnumerable<Func<HelpContext, bool>>>? _getLayout;
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="HelpBuilder"/> class.
+    /// Formats output to be shown to users to describe how to use a command line tool.
     /// </summary>
-    /// <param name="maxWidth">The maximum width in characters after which help output is wrapped.</param>
-    public HelpBuilder(int maxWidth = int.MaxValue)
+    public partial class HelpBuilder 
     {
-        MaxWidth = maxWidth > 0 ? maxWidth : int.MaxValue;
-    }
+        private const string Indent = "  ";
 
-    /// <summary>
-    /// The maximum width for which to format help output.
-    /// </summary>
-    public int MaxWidth { get; }
+        private Dictionary<Symbol, Customization>? _customizationsBySymbol;
+        private Func<HelpContext, IEnumerable<Func<HelpContext, bool>>>? _getLayout;
 
-    /// <summary>
-    /// Writes help output for the specified command.
-    /// </summary>
-    public virtual void Write(HelpContext context)
-    {
-        if (context is null)
+        /// <param name="maxWidth">The maximum width in characters after which help output is wrapped.</param>
+        public HelpBuilder(int maxWidth = int.MaxValue)
         {
-            throw new ArgumentNullException(nameof(context));
-        }
-
-        if (context.Command.Hidden)
-        {
-            return;
-        }
-
-        foreach (var writeSection in GetLayout(context))
-        {
-            if (!writeSection(context))
+            if (maxWidth <= 0)
             {
-                continue;
+                maxWidth = int.MaxValue;
+            }
+            MaxWidth = maxWidth;
+        }
+
+        /// <summary>
+        /// The maximum width for which to format help output.
+        /// </summary>
+        public int MaxWidth { get; }
+
+        /// <summary>
+        /// Writes help output for the specified command.
+        /// </summary>
+        public virtual void Write(HelpContext context)
+        {
+            if (context is null)
+            {
+                throw new ArgumentNullException(nameof(context));
             }
 
-            context.Output.WriteLine();
-        }
-    }
-
-    /// <summary>
-    /// Specifies custom help details for a specific symbol.
-    /// </summary>
-    public void CustomizeSymbol(
-        Symbol symbol,
-        Func<HelpContext, string?>? firstColumnText = null,
-        Func<HelpContext, string?>? secondColumnText = null,
-        Func<HelpContext, string?>? defaultValue = null)
-    {
-        if (symbol is null)
-        {
-            throw new ArgumentNullException(nameof(symbol));
-        }
-
-        _customizationsBySymbol ??= [];
-        _customizationsBySymbol[symbol] = new Customization(firstColumnText, secondColumnText, defaultValue);
-    }
-
-    /// <summary>
-    /// Customizes the help sections that will be displayed.
-    /// </summary>
-    public void CustomizeLayout(Func<HelpContext, IEnumerable<Func<HelpContext, bool>>> getLayout)
-    {
-        _getLayout = getLayout ?? throw new ArgumentNullException(nameof(getLayout));
-    }
-
-    /// <summary>
-    /// Specifies custom help details for a specific symbol using simple string values.
-    /// </summary>
-    public void CustomizeSymbol(
-        Symbol symbol,
-        string? firstColumnText = null,
-        string? secondColumnText = null,
-        string? defaultValue = null)
-    {
-        CustomizeSymbol(symbol, _ => firstColumnText, _ => secondColumnText, _ => defaultValue);
-    }
-
-    /// <summary>
-    /// Writes help output for the specified command.
-    /// </summary>
-    public void Write(Command command, TextWriter writer)
-    {
-        Write(new HelpContext(this, command, writer));
-    }
-
-    private string GetUsage(Command command)
-    {
-        return string.Join(" ", GetUsageParts().Where(static value => !string.IsNullOrWhiteSpace(value)));
-
-        IEnumerable<string> GetUsageParts()
-        {
-            var displayOptionTitle = false;
-
-            var parentCommands = command
-                .RecurseWhileNotNull(static current => current.Parents.OfType<Command>().FirstOrDefault())
-                .Reverse();
-
-            foreach (var parentCommand in parentCommands)
+            if (context.Command.Hidden)
             {
-                if (!displayOptionTitle)
-                {
-                    displayOptionTitle = parentCommand.Options.Any(static option => option.Recursive && !option.Hidden);
-                }
+                return;
+            }
 
-                yield return (parentCommand is RootCommand ? RootCommand.ExecutableName : null) ?? parentCommand.Name;
-
-                if (parentCommand.Arguments.Any())
+            foreach (var writeSection in GetLayout(context))
+            {
+                if (writeSection(context))
                 {
-                    yield return FormatArgumentUsage(parentCommand.Arguments);
+                    context.Output.WriteLine();
                 }
             }
+        }
 
-            if (command.Subcommands.Any(static subcommand => !subcommand.Hidden))
+        /// <summary>
+        /// Specifies custom help details for a specific symbol.
+        /// </summary>
+        /// <param name="symbol">The symbol to specify custom help details for.</param>
+        /// <param name="firstColumnText">A delegate to display the first help column (typically name and usage information).</param>
+        /// <param name="secondColumnText">A delegate to display second help column (typically the description).</param>
+        /// <param name="defaultValue">A delegate to display the default value for the symbol.</param>
+        public void CustomizeSymbol(Symbol symbol,
+            Func<HelpContext, string?>? firstColumnText = null,
+            Func<HelpContext, string?>? secondColumnText = null,
+            Func<HelpContext, string?>? defaultValue = null)
+        {
+            if (symbol is null)
             {
-                yield return LocalizationResources.HelpUsageCommand();
+                throw new ArgumentNullException(nameof(symbol));
             }
 
-            displayOptionTitle = displayOptionTitle || command.Options.Any(static option => !option.Hidden);
+            _customizationsBySymbol ??= new();
 
-            if (displayOptionTitle)
+            _customizationsBySymbol[symbol] = new Customization(firstColumnText, secondColumnText, defaultValue);
+        }
+
+        /// <summary>
+        /// Customizes the help sections that will be displayed.
+        /// </summary>
+        /// <param name="getLayout">
+        /// A delegate that returns the sections in the order in which they should be written.<br/>
+        /// The section delegate should return false if the section is empty, true otherwise.
+        /// </param>
+        public void CustomizeLayout(Func<HelpContext, IEnumerable<Func<HelpContext, bool>>> getLayout)
+        {
+            _getLayout = getLayout ?? throw new ArgumentNullException(nameof(getLayout));
+        }
+
+        /// <summary>
+        /// Specifies custom help details for a specific symbol.
+        /// </summary>
+        /// <param name="symbol">The symbol to customize the help details for.</param>
+        /// <param name="firstColumnText">A delegate to display the first help column (typically name and usage information).</param>
+        /// <param name="secondColumnText">A delegate to display second help column (typically the description).</param>
+        /// <param name="defaultValue">The displayed default value for the symbol.</param>
+        public void CustomizeSymbol(
+            Symbol symbol,
+            string? firstColumnText = null,
+            string? secondColumnText = null,
+            string? defaultValue = null)
+        {
+            CustomizeSymbol(symbol, _ => firstColumnText, _ => secondColumnText, _ => defaultValue);
+        }
+
+        /// <summary>
+        /// Writes help output for the specified command.
+        /// </summary>
+        public void Write(Command command, TextWriter writer)
+        {
+            Write(new HelpContext(this, command, writer));
+        }
+
+        private string GetUsage(Command command)
+        {
+            return string.Join(" ", GetUsageParts().Where(x => !string.IsNullOrWhiteSpace(x)));
+
+            IEnumerable<string> GetUsageParts()
             {
-                yield return LocalizationResources.HelpUsageOptions();
-            }
+                bool displayOptionTitle = false;
 
-            if (!command.TreatUnmatchedTokensAsErrors)
-            {
-                yield return LocalizationResources.HelpUsageAdditionalArguments();
-            }
-        }
-    }
+                IEnumerable<Command> parentCommands =
+                    command
+                        .RecurseWhileNotNull(c => c.Parents.OfType<Command>().FirstOrDefault())
+                        .Reverse();
 
-    private IEnumerable<TwoColumnHelpRow> GetCommandArgumentRows(Command command, HelpContext context) =>
-        command
-            .RecurseWhileNotNull(static current => current.Parents.OfType<Command>().FirstOrDefault())
-            .Reverse()
-            .SelectMany(static current => current.Arguments.Where(argument => !argument.Hidden))
-            .Select(argument => GetTwoColumnRow(argument, context))
-            .Distinct();
-
-    private bool WriteSubcommands(HelpContext context)
-    {
-        var subcommands = context.Command.Subcommands
-            .Where(static command => !command.Hidden)
-            .Select(command => GetTwoColumnRow(command, context))
-            .ToArray();
-
-        if (subcommands.Length == 0)
-        {
-            return false;
-        }
-
-        WriteHeading(LocalizationResources.HelpCommandsTitle(), null, context.Output);
-        WriteColumns(subcommands, context);
-        return true;
-    }
-
-    private bool WriteAdditionalArguments(HelpContext context)
-    {
-        if (context.Command.TreatUnmatchedTokensAsErrors)
-        {
-            return false;
-        }
-
-        WriteHeading(
-            LocalizationResources.HelpAdditionalArgumentsTitle(),
-            LocalizationResources.HelpAdditionalArgumentsDescription(),
-            context.Output);
-
-        return true;
-    }
-
-    private void WriteHeading(string? heading, string? description, TextWriter writer)
-    {
-        if (!string.IsNullOrWhiteSpace(heading))
-        {
-            writer.WriteLine(heading);
-        }
-
-        if (string.IsNullOrWhiteSpace(description))
-        {
-            return;
-        }
-
-        var maxWidth = Math.Max(1, MaxWidth - Indent.Length);
-
-        foreach (var part in WrapText(description!, maxWidth))
-        {
-            writer.Write(Indent);
-            writer.WriteLine(part);
-        }
-    }
-
-    /// <summary>
-    /// Writes the specified help rows, aligning output in columns.
-    /// </summary>
-    public void WriteColumns(IReadOnlyList<TwoColumnHelpRow> items, HelpContext context)
-    {
-        if (items.Count == 0)
-        {
-            return;
-        }
-
-        var windowWidth = Math.Max(MaxWidth, 20);
-        var firstColumnWidth = items.Max(static item => item.FirstColumnText.Length);
-        var secondColumnWidth = items.Max(static item => item.SecondColumnText.Length);
-
-        if (firstColumnWidth + secondColumnWidth + (Indent.Length * 2) > windowWidth)
-        {
-            var firstColumnMaxWidth = Math.Max(1, (windowWidth / 2) - Indent.Length);
-
-            if (firstColumnWidth > firstColumnMaxWidth)
-            {
-                firstColumnWidth = items
-                    .SelectMany(item => WrapText(item.FirstColumnText, firstColumnMaxWidth).Select(static part => part.Length))
-                    .DefaultIfEmpty(firstColumnMaxWidth)
-                    .Max();
-            }
-
-            secondColumnWidth = Math.Max(1, windowWidth - firstColumnWidth - (Indent.Length * 2));
-        }
-
-        foreach (var helpItem in items)
-        {
-            var firstColumnParts = WrapText(helpItem.FirstColumnText, firstColumnWidth);
-            var secondColumnParts = WrapText(helpItem.SecondColumnText, secondColumnWidth);
-
-            foreach (var (first, second) in ZipWithEmpty(firstColumnParts, secondColumnParts))
-            {
-                context.Output.Write($"{Indent}{first}");
-
-                if (!string.IsNullOrWhiteSpace(second))
+                foreach (var parentCommand in parentCommands)
                 {
-                    var padSize = firstColumnWidth - first.Length;
-
-                    if (padSize > 0)
+                    if (!displayOptionTitle)
                     {
-                        context.Output.Write(new string(' ', padSize));
+                        displayOptionTitle = parentCommand.Options.Any(x => x.Recursive && !x.Hidden);
                     }
 
-                    context.Output.Write($"{Indent}{second}");
+                    yield return (parentCommand is RootCommand root ? root.HelpName : null) ?? parentCommand.Name;
+
+                    if (parentCommand.Arguments.Any())
+                    {
+                        yield return FormatArgumentUsage(parentCommand.Arguments);
+                    }
                 }
 
-                context.Output.WriteLine();
+                var hasCommandWithHelp = command.Subcommands.Any(x => !x.Hidden);
+
+                if (hasCommandWithHelp)
+                {
+                    yield return LocalizationResources.HelpUsageCommand();
+                }
+
+                displayOptionTitle = displayOptionTitle || (command.Options.Any(x => !x.Hidden));
+                
+                if (displayOptionTitle)
+                {
+                    yield return LocalizationResources.HelpUsageOptions();
+                }
+
+                if (!command.TreatUnmatchedTokensAsErrors)
+                {
+                    yield return LocalizationResources.HelpUsageAdditionalArguments();
+                }
             }
         }
 
-        static IEnumerable<(string First, string Second)> ZipWithEmpty(IEnumerable<string> first, IEnumerable<string> second)
+        private IEnumerable<TwoColumnHelpRow> GetCommandArgumentRows(Command command, HelpContext context) =>
+            command
+                .RecurseWhileNotNull(c => c.Parents.OfType<Command>().FirstOrDefault())
+                .Reverse()
+                .SelectMany(cmd => cmd.Arguments.Where(a => !a.Hidden))
+                .Select(a => GetTwoColumnRow(a, context))
+                .Distinct();
+
+        private bool WriteSubcommands(HelpContext context)
         {
-            using var firstEnumerator = first.GetEnumerator();
-            using var secondEnumerator = second.GetEnumerator();
-
-            var hasFirst = false;
-            var hasSecond = false;
-
-            while ((hasFirst = firstEnumerator.MoveNext()) | (hasSecond = secondEnumerator.MoveNext()))
+            var subcommands = context.Command.Subcommands.Where(x => !x.Hidden).Select(x => GetTwoColumnRow(x, context)).ToArray();
+            if (subcommands.Length > 0)
             {
-                yield return (hasFirst ? firstEnumerator.Current : string.Empty, hasSecond ? secondEnumerator.Current : string.Empty);
+                WriteHeading(LocalizationResources.HelpCommandsTitle(), null, context.Output);
+                WriteColumns(subcommands, context);
+                return true;
             }
-        }
-    }
-
-    /// <summary>
-    /// Gets a help item for the specified symbol.
-    /// </summary>
-    public TwoColumnHelpRow GetTwoColumnRow(Symbol symbol, HelpContext context)
-    {
-        if (symbol is null)
-        {
-            throw new ArgumentNullException(nameof(symbol));
+            return false;
         }
 
-        Customization? customization = null;
-
-        if (_customizationsBySymbol is not null)
+        private bool WriteAdditionalArguments(HelpContext context)
         {
-            _customizationsBySymbol.TryGetValue(symbol, out customization);
-        }
-
-        return symbol switch
-        {
-            Option or Command => GetOptionOrCommandRow(),
-            Argument argument => GetCommandArgumentRow(argument),
-            _ => throw new NotSupportedException($"Symbol type {symbol.GetType()} is not supported."),
-        };
-
-        TwoColumnHelpRow GetOptionOrCommandRow()
-        {
-            var firstColumnText = customization?.GetFirstColumn?.Invoke(context)
-                                  ?? (symbol is Option option
-                                      ? Default.GetOptionUsageLabel(option)
-                                      : Default.GetCommandUsageLabel((Command)symbol));
-
-            var customizedSymbolDescription = customization?.GetSecondColumn?.Invoke(context);
-            var symbolDescription = customizedSymbolDescription ?? symbol.Description ?? string.Empty;
-            var defaultValueDescription = customizedSymbolDescription is null
-                ? GetOptionOrCommandDefaultValue()
-                : string.Empty;
-
-            return new TwoColumnHelpRow(firstColumnText, $"{symbolDescription} {defaultValueDescription}".Trim());
-        }
-
-        TwoColumnHelpRow GetCommandArgumentRow(Argument argument)
-        {
-            var firstColumnText = customization?.GetFirstColumn?.Invoke(context) ?? Default.GetArgumentUsageLabel(argument);
-            var argumentDescription = customization?.GetSecondColumn?.Invoke(context) ?? Default.GetArgumentDescription(argument);
-            var defaultValue = Default.ShouldShowDefaultValue(argument)
-                ? GetArgumentDefaultValue(context.Command, argument, true, context)
-                : string.Empty;
-            var defaultValueDescription = string.IsNullOrWhiteSpace(defaultValue)
-                ? string.Empty
-                : $"[{defaultValue}]";
-
-            return new TwoColumnHelpRow(firstColumnText, $"{argumentDescription} {defaultValueDescription}".Trim());
-        }
-
-        string GetOptionOrCommandDefaultValue()
-        {
-            var defaultArguments = symbol
-                .GetParameters()
-                .Where(static argument => !argument.Hidden)
-                .Where(Default.ShouldShowDefaultValue)
-                .ToArray();
-
-            if (defaultArguments.Length == 0)
+            if (!context.Command.TreatUnmatchedTokensAsErrors)
             {
-                return string.Empty;
+                WriteHeading(LocalizationResources.HelpAdditionalArgumentsTitle(),
+                             LocalizationResources.HelpAdditionalArgumentsDescription(), context.Output);
+                return true;
+            }
+            return false;
+        }
+
+        private void WriteHeading(string? heading, string? description, TextWriter writer)
+        {
+            if (!string.IsNullOrWhiteSpace(heading))
+            {
+                writer.WriteLine(heading);
             }
 
-            var isSingleArgument = defaultArguments.Length == 1;
-            var argumentDefaultValues = string.Join(", ", defaultArguments
-                .Select(argument => GetArgumentDefaultValue(symbol, argument, isSingleArgument, context))
-                .Where(static value => !string.IsNullOrWhiteSpace(value)));
-
-            return string.IsNullOrWhiteSpace(argumentDefaultValues)
-                ? string.Empty
-                : $"[{argumentDefaultValues}]";
-        }
-    }
-
-    private string GetArgumentDefaultValue(Symbol parent, Symbol parameter, bool useDefaultLabel, HelpContext context)
-    {
-        string? displayedDefaultValue = null;
-
-        if (_customizationsBySymbol is not null)
-        {
-            if (_customizationsBySymbol.TryGetValue(parent, out var parentCustomization) &&
-                parentCustomization.GetDefaultValue?.Invoke(context) is { } parentDefaultValue)
+            if (!string.IsNullOrWhiteSpace(description))
             {
-                displayedDefaultValue = parentDefaultValue;
-            }
-            else if (_customizationsBySymbol.TryGetValue(parameter, out var parameterCustomization) &&
-                     parameterCustomization.GetDefaultValue?.Invoke(context) is { } ownDefaultValue)
-            {
-                displayedDefaultValue = ownDefaultValue;
+                int maxWidth = MaxWidth - Indent.Length;
+                foreach (var part in WrapText(description!, maxWidth))
+                {
+                    writer.Write(Indent);
+                    writer.WriteLine(part);
+                }
             }
         }
 
-        displayedDefaultValue ??= Default.GetArgumentDefaultValue(parameter);
-
-        if (string.IsNullOrWhiteSpace(displayedDefaultValue))
+        /// <summary>
+        /// Writes the specified help rows, aligning output in columns.
+        /// </summary>
+        /// <param name="items">The help items to write out in columns.</param>
+        /// <param name="context">The help context.</param>
+        public void WriteColumns(IReadOnlyList<TwoColumnHelpRow> items, HelpContext context)
         {
-            return string.Empty;
-        }
-
-        var label = useDefaultLabel
-            ? LocalizationResources.HelpArgumentDefaultValueLabel()
-            : parameter.Name;
-
-        return $"{label}: {displayedDefaultValue}";
-    }
-
-    private string FormatArgumentUsage(IList<Argument> arguments)
-    {
-        var builder = new StringBuilder(arguments.Count * 16);
-        List<char>? closingCharacters = null;
-
-        foreach (var argument in arguments)
-        {
-            if (argument.Hidden)
+            if (items.Count == 0)
             {
-                continue;
+                return;
             }
 
-            var arityIndicator = argument.Arity.MaximumNumberOfValues > 1 ? "..." : string.Empty;
-            var isOptional = argument.Arity.MinimumNumberOfValues == 0;
+            int windowWidth = MaxWidth;
 
-            if (isOptional)
+            int firstColumnWidth = items.Select(x => x.FirstColumnText.Length).Max();
+            int secondColumnWidth = items.Select(x => x.SecondColumnText.Length).Max();
+
+            if (firstColumnWidth + secondColumnWidth + Indent.Length + Indent.Length > windowWidth)
             {
-                builder.Append($"[<{argument.Name}>{arityIndicator}");
-                (closingCharacters ??= []).Add(']');
+                int firstColumnMaxWidth = windowWidth / 2 - Indent.Length;
+                if (firstColumnWidth > firstColumnMaxWidth)
+                {
+                    firstColumnWidth = items.SelectMany(x => WrapText(x.FirstColumnText, firstColumnMaxWidth).Select(x => x.Length)).Max();
+                }
+                secondColumnWidth = windowWidth - firstColumnWidth - Indent.Length - Indent.Length;
+            }
+            
+            for (var i = 0; i < items.Count; i++)
+            {
+                var helpItem = items[i];
+                IEnumerable<string> firstColumnParts = WrapText(helpItem.FirstColumnText, firstColumnWidth);
+                IEnumerable<string> secondColumnParts = WrapText(helpItem.SecondColumnText, secondColumnWidth);
+
+                foreach (var (first, second) in ZipWithEmpty(firstColumnParts, secondColumnParts))
+                {
+                    context.Output.Write($"{Indent}{first}");
+                    if (!string.IsNullOrWhiteSpace(second))
+                    {
+                        int padSize = firstColumnWidth - first.Length;
+                        string padding = "";
+                        if (padSize > 0)
+                        {
+                            padding = new string(' ', padSize);
+                        }
+
+                        context.Output.Write($"{padding}{Indent}{second}");
+                    }
+
+                    context.Output.WriteLine();
+                }
+            }
+
+            static IEnumerable<(string, string)> ZipWithEmpty(IEnumerable<string> first, IEnumerable<string> second)
+            {
+                using var enum1 = first.GetEnumerator();
+                using var enum2 = second.GetEnumerator();
+                bool hasFirst = false, hasSecond = false;
+                while ((hasFirst = enum1.MoveNext()) | (hasSecond = enum2.MoveNext()))
+                {
+                    yield return (hasFirst ? enum1.Current : "", hasSecond ? enum2.Current : "");
+                }
+            }
+        }
+
+        private string FormatArgumentUsage(IList<Argument> arguments)
+        {
+            var sb = new StringBuilder(arguments.Count * 100);
+
+            var end = default(List<char>);
+
+            for (var i = 0; i < arguments.Count; i++)
+            {
+                var argument = arguments[i];
+                if (argument.Hidden)
+                {
+                    continue;
+                }
+
+                var arityIndicator =
+                    argument.Arity.MaximumNumberOfValues > 1
+                        ? "..."
+                        : "";
+
+                var isOptional = IsOptional(argument);
+
+                if (isOptional)
+                {
+                    sb.Append($"[<{argument.Name}>{arityIndicator}");
+                    (end ??= []).Add(']');
+                }
+                else
+                {
+                    sb.Append($"<{argument.Name}>{arityIndicator}");
+                }
+
+                sb.Append(' ');
+            }
+
+            if (sb.Length > 0)
+            {
+                sb.Length--;
+
+                if (end is not null)
+                {
+                    while (end.Count > 0)
+                    {
+                        sb.Append(end[^1]);
+                        end.RemoveAt(end.Count - 1);
+                    }
+                }
+            }
+
+            return sb.ToString();
+            
+            bool IsOptional(Argument argument) =>
+                argument.Arity.MinimumNumberOfValues == 0;
+        }
+
+        private IEnumerable<Func<HelpContext, bool>> GetLayout(HelpContext context)
+        {
+            if (_getLayout is null)
+            {
+                _getLayout = _ => Default.GetLayout();
+            }
+            return _getLayout(context);
+        }
+
+        private static IEnumerable<string> WrapText(string text, int maxWidth)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                yield break;
+            }
+
+            //First handle existing new lines
+            var parts = text.Split(["\r\n", "\n"], StringSplitOptions.None);
+
+            foreach (string part in parts)
+            {
+                if (part.Length <= maxWidth)
+                {
+                    yield return part;
+                }
+                else
+                {
+                    //Long item, wrap it based on the width
+                    for (int i = 0; i < part.Length;)
+                    {
+                        if (part.Length - i < maxWidth)
+                        {
+                            yield return part.Substring(i);
+                            break;
+                        }
+                        else
+                        {
+                            int length = -1;
+                            for (int j = 0; j + i < part.Length && j < maxWidth; j++)
+                            {
+                                if (char.IsWhiteSpace(part[i + j]))
+                                {
+                                    length = j + 1;
+                                }
+                            }
+                            if (length == -1)
+                            {
+                                length = maxWidth;
+                            }
+                            yield return part.Substring(i, length);
+
+                            i += length;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets a help item for the specified symbol.
+        /// </summary>
+        /// <param name="symbol">The symbol to get a help item for.</param>
+        /// <param name="context">The help context.</param>
+        public TwoColumnHelpRow GetTwoColumnRow(
+            Symbol symbol,
+            HelpContext context)
+        {
+            if (symbol is null)
+            {
+                throw new ArgumentNullException(nameof(symbol));
+            }
+
+            Customization? customization = null;
+
+            if (_customizationsBySymbol is not null)
+            {
+                _customizationsBySymbol.TryGetValue(symbol, out customization);
+            }
+
+            if (symbol is Option or Command)
+            {
+                return GetOptionOrCommandRow();
+            }
+            else if (symbol is Argument argument)
+            {
+                return GetCommandArgumentRow(argument);
             }
             else
             {
-                builder.Append($"<{argument.Name}>{arityIndicator}");
+                throw new NotSupportedException($"Symbol type {symbol.GetType()} is not supported.");
             }
 
-            builder.Append(' ');
-        }
-
-        if (builder.Length == 0)
-        {
-            return string.Empty;
-        }
-
-        builder.Length--;
-
-        if (closingCharacters is not null)
-        {
-            while (closingCharacters.Count > 0)
+            TwoColumnHelpRow GetOptionOrCommandRow()
             {
-                builder.Append(closingCharacters[^1]);
-                closingCharacters.RemoveAt(closingCharacters.Count - 1);
-            }
-        }
+                var firstColumnText = customization?.GetFirstColumn?.Invoke(context) 
+                    ?? (symbol is Option option
+                            ? Default.GetOptionUsageLabel(option)
+                            : Default.GetCommandUsageLabel((Command)symbol));
 
-        return builder.ToString();
-    }
+                var customizedSymbolDescription = customization?.GetSecondColumn?.Invoke(context);
 
-    private IEnumerable<Func<HelpContext, bool>> GetLayout(HelpContext context)
-    {
-        _getLayout ??= static _ => Default.GetLayout();
-        return _getLayout(context);
-    }
+                var symbolDescription = customizedSymbolDescription ?? symbol.Description ?? string.Empty;
 
-    private static IEnumerable<string> WrapText(string text, int maxWidth)
-    {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            yield break;
-        }
+                //in case symbol description is customized, do not output default value
+                //default value output is not customizable for identifier symbols
+                var defaultValueDescription = customizedSymbolDescription is null
+                    ? GetOptionOrCommandDefaultValue()
+                    : string.Empty;
 
-        if (maxWidth <= 0)
-        {
-            yield return text;
-            yield break;
-        }
+                var secondColumnText = $"{symbolDescription} {defaultValueDescription}".Trim();
 
-        var parts = text.Split(["\r\n", "\n"], StringSplitOptions.None);
-
-        foreach (var part in parts)
-        {
-            if (part.Length <= maxWidth)
-            {
-                yield return part;
-                continue;
+                return new TwoColumnHelpRow(firstColumnText, secondColumnText);
             }
 
-            for (var index = 0; index < part.Length;)
+            TwoColumnHelpRow GetCommandArgumentRow(Argument argument)
             {
-                if (part.Length - index <= maxWidth)
+                var firstColumnText =
+                    customization?.GetFirstColumn?.Invoke(context) ?? Default.GetArgumentUsageLabel(argument);
+
+                var argumentDescription =
+                    customization?.GetSecondColumn?.Invoke(context) ?? Default.GetArgumentDescription(argument);
+
+                var defaultValueDescription =
+                    Default.ShouldShowDefaultValue(argument) &&
+                    !string.IsNullOrEmpty(GetArgumentDefaultValue(context.Command, argument, true, context))
+                        ? $"[{GetArgumentDefaultValue(context.Command, argument, true, context)}]"
+                        : "";
+
+                var secondColumnText = $"{argumentDescription} {defaultValueDescription}".Trim();
+
+                return new TwoColumnHelpRow(firstColumnText, secondColumnText);
+            }
+
+            string GetOptionOrCommandDefaultValue()
+            {
+                var arguments = symbol.GetParameters();
+                var defaultArguments = arguments.Where(x => !x.Hidden && Default.ShouldShowDefaultValue(x)).ToArray();
+
+                if (defaultArguments.Length == 0)
                 {
-                    yield return part[index..];
-                    break;
+                    return "";
                 }
 
-                var length = -1;
+                var isSingleArgument = defaultArguments.Length == 1;
+                var argumentDefaultValues = string.Join(", ", defaultArguments
+                    .Select(argument => GetArgumentDefaultValue(symbol, argument, isSingleArgument, context))
+                    .Where(defaultValue => !string.IsNullOrEmpty(defaultValue)));
 
-                for (var offset = 0; index + offset < part.Length && offset < maxWidth; offset++)
-                {
-                    if (char.IsWhiteSpace(part[index + offset]))
-                    {
-                        length = offset + 1;
-                    }
-                }
-
-                if (length == -1)
-                {
-                    length = maxWidth;
-                }
-
-                yield return part.Substring(index, length);
-                index += length;
+                return string.IsNullOrEmpty(argumentDefaultValues)
+                           ? ""
+                           : $"[{argumentDefaultValues}]";
             }
         }
-    }
 
-    private sealed class Customization(
-        Func<HelpContext, string?>? getFirstColumn,
-        Func<HelpContext, string?>? getSecondColumn,
-        Func<HelpContext, string?>? getDefaultValue)
-    {
-        public Func<HelpContext, string?>? GetFirstColumn { get; } = getFirstColumn;
+        private string GetArgumentDefaultValue(
+            Symbol parent,
+            Symbol parameter,
+            bool displayArgumentName,
+            HelpContext context)
+        {
+            string? displayedDefaultValue = null;
 
-        public Func<HelpContext, string?>? GetSecondColumn { get; } = getSecondColumn;
+            if (_customizationsBySymbol is not null)
+            {
+                if (_customizationsBySymbol.TryGetValue(parent, out var customization) &&
+                    customization.GetDefaultValue?.Invoke(context) is { } parentDefaultValue)
+                {
+                    displayedDefaultValue = parentDefaultValue;
+                }
+                else if (_customizationsBySymbol.TryGetValue(parameter, out customization) &&
+                         customization.GetDefaultValue?.Invoke(context) is { } ownDefaultValue)
+                {
+                    displayedDefaultValue = ownDefaultValue;
+                }
+            }
 
-        public Func<HelpContext, string?>? GetDefaultValue { get; } = getDefaultValue;
+            displayedDefaultValue ??= Default.GetArgumentDefaultValue(parameter);
+
+            if (string.IsNullOrWhiteSpace(displayedDefaultValue))
+            {
+                return "";
+            }
+
+            string label = displayArgumentName 
+                               ? LocalizationResources.HelpArgumentDefaultValueLabel() 
+                               : parameter.Name;
+            return $"{label}: {displayedDefaultValue}";
+        }
+
+        private class Customization
+        {
+            public Customization(
+                Func<HelpContext, string?>? getFirstColumn,
+                Func<HelpContext, string?>? getSecondColumn,
+                Func<HelpContext, string?>? getDefaultValue)
+            {
+                GetFirstColumn = getFirstColumn;
+                GetSecondColumn = getSecondColumn;
+                GetDefaultValue = getDefaultValue;
+            }
+
+            public Func<HelpContext, string?>? GetFirstColumn { get; }
+            public Func<HelpContext, string?>? GetSecondColumn { get; }
+            public Func<HelpContext, string?>? GetDefaultValue { get; }
+        }
     }
 }

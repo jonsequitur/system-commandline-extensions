@@ -1,4 +1,8 @@
-﻿System.CommandLine.Help
+﻿System.CommandLine
+  public static class RootCommandExtensions
+    public static System.String get_HelpName(RootCommand root)
+    public static System.Void set_HelpName(RootCommand root, System.String value)
+System.CommandLine.Help
   public class CustomHelpAction : System.CommandLine.Invocation.SynchronousCommandLineAction
     .ctor()
     public HelpBuilder Builder { get; set; }

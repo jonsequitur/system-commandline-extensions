@@ -9,7 +9,7 @@ using AwesomeAssertions;
 using Xunit;
 using static System.Environment;
 
-namespace HelpLine.Tests.Help;
+namespace HelpLine.HelpBuilderTests.Help;
 
 public partial class HelpBuilderTests
 {

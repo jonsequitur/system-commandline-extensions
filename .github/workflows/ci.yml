@@ -10,6 +10,7 @@ on:
 permissions:
   contents: read
   packages: write
+  checks: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -63,6 +64,16 @@ jobs:
         with:
           name: test-results-${{ matrix.os }}
           path: ./artifacts/test-results/${{ matrix.os }}/**
+          if-no-files-found: warn
+
+      - name: Publish test report
+        if: always()
+        continue-on-error: true
+        uses: dorny/test-reporter@v1
+        with:
+          name: Tests (${{ matrix.os }})
+          path: ./artifacts/test-results/${{ matrix.os }}/*.trx
+          reporter: dotnet-trx
 
   pack:
     name: Pack

@@ -1,4 +1,6 @@
 <Solution>
-  <Project Path="src\HelpLine\HelpLine.csproj" />
-  <Project Path="src\HelpLine.Tests\HelpLine.Tests.csproj" />
+  <Project Path="src\HelpLine.HelpBuilder\HelpLine.HelpBuilder.csproj" />
+  <Project Path="src\HelpLine.Docs\HelpLine.Docs.csproj" />
+  <Project Path="src\HelpLine.HelpBuilder.Tests\HelpLine.HelpBuilder.Tests.csproj" />
+  <Project Path="src\HelpLine.Docs.Tests\HelpLine.Docs.Tests.csproj" />
 </Solution>

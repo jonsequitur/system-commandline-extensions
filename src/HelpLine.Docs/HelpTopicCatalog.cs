@@ -1,13 +1,13 @@
 using System.Reflection;
 
-namespace HelpLine.Markdown.Topics;
+namespace HelpLine.Docs;
 
 /// <summary>
 /// Discovers and reads embedded Markdown help topics from an assembly.
 /// </summary>
 public sealed class HelpTopicCatalog
 {
-    private const string DefaultResourceMarker = ".HelpLine.Markdown.Topics.";
+    private const string DefaultResourceMarker = ".HelpLine.Docs.Topics.";
     private readonly Assembly _assembly;
     private readonly Dictionary<string, HelpTopic> _topicsByName;
 

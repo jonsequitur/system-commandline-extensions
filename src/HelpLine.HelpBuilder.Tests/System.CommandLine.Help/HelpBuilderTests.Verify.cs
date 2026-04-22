@@ -7,7 +7,7 @@ using System.CommandLine;
 using VerifyXunit;
 using Xunit;
 
-namespace HelpLine.Tests.Help;
+namespace HelpLine.HelpBuilderTests.Help;
 
 public partial class HelpBuilderTests
 {

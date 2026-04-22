@@ -1,4 +1,4 @@
-namespace HelpLine.Tests;
+namespace HelpLine.HelpBuilderTests;
 
 internal static class VerifyConfig
 {

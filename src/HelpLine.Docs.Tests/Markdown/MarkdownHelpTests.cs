@@ -1,10 +1,9 @@
 using System.CommandLine;
 using AwesomeAssertions;
 using AwesomeAssertions.Execution;
-using HelpLine.Markdown.Rendering;
-using HelpLine.Markdown.Topics;
+using HelpLine.Docs;
 
-namespace HelpLine.Markdown.Tests;
+namespace HelpLine.Docs.Tests;
 
 public class MarkdownHelpTests
 {

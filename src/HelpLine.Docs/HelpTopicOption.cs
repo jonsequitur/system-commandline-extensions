@@ -1,8 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Completions;
-using HelpLine.Markdown.Topics;
 
-namespace HelpLine.Markdown.Options;
+namespace HelpLine.Docs;
 
 /// <summary>
 /// Selects a Markdown help topic to display.

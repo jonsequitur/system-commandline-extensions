@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace HelpLine.Tests;
+namespace HelpLine.HelpBuilderTests;
 
 internal static class ApiContract
 {
@@ -13,7 +13,7 @@ internal static class ApiContract
     {
         StringBuilder output = new();
         var types = assembly.GetExportedTypes().OrderBy(t => t.FullName).ToArray();
-        var namespaces = types.Select(t => t.Namespace).Distinct().OrderBy(n => n).ToArray();
+        var namespaces = types.Select(t => t.Namespace ?? string.Empty).Distinct().OrderBy(n => n, StringComparer.Ordinal).ToArray();
 
         HashSet<MethodInfo> printedMethods = [];
 

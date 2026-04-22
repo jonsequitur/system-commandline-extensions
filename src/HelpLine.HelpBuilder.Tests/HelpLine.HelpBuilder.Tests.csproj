@@ -1,10 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <AssemblyName>HelpLine.Tests</AssemblyName>
+    <AssemblyName>HelpLine.HelpBuilder.Tests</AssemblyName>
     <IsTestProject>true</IsTestProject>
     <OutputType>Exe</OutputType>
-    <RootNamespace>HelpLine.Tests</RootNamespace>
-    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    <RootNamespace>HelpLine.HelpBuilderTests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,12 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HelpLine\HelpLine.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="System.CommandLine.Help\**\*.md">
-      <LogicalName>$(AssemblyName).HelpLine.Markdown.Topics.%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
+    <ProjectReference Include="..\HelpLine.HelpBuilder\HelpLine.HelpBuilder.csproj" />
   </ItemGroup>
 </Project>

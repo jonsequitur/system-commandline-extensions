@@ -2,10 +2,10 @@
 
 [![CI](https://github.com/jonsequitur/system-commandline-extensions/actions/workflows/ci.yml/badge.svg)](https://github.com/jonsequitur/system-commandline-extensions/actions/workflows/ci.yml)
 
-This repo now contains two complementary libraries for extending System.CommandLine help:
+This repo now contains libraries for extending System.CommandLine help:
 
-- HelpLine.Docs for Markdown-backed help topics and rich topic discovery
-- HelpLine.HelpBuilder for the legacy public HelpBuilder compatibility surface
+- HelpLine.Docs: Provide rich documentation directly in your CLI app using Markdown
+- HelpLine.HelpBuilder: Source code-compatible adapter for the System.CommandLine `HelpBuilder`
 
 ## Markdown-based rich help topics with HelpLine.Docs
 
@@ -13,16 +13,16 @@ HelpLine.Docs is designed to let you author help topics as Markdown files in you
 
 ### 1. Add Markdown files to your source project
 
-Create a `Help\` folder in the application project that references `HelpLine`, then add one or more Markdown files:
+Create a `Docs\` folder in the application project that references `HelpLine`, then add one or more Markdown files:
 
 ```text
 MyCli/
-  Help/
+  Docs/
     getting-started.md
     advanced-usage.md
 ```
 
-By default, all `*.md` files under `Help\` are included recursively.
+By default, all `*.md` files under `Docs\` are included recursively.
 
 ### 2. Build-time embedding
 
@@ -32,7 +32,7 @@ If you want to use a different source folder, set the MSBuild property in your a
 
 ```xml
 <PropertyGroup>
-  <HelpLineMarkdownTopicsRoot>Docs\Help</HelpLineMarkdownTopicsRoot>
+  <HelpLineMarkdownTopicsRoot>MyCustomFolder</HelpLineMarkdownTopicsRoot>
 </PropertyGroup>
 ```
 

@@ -1,3 +1,7 @@
 <Project>
-  <Import Project="$(MSBuildThisFileDirectory)CommandLineMarkdownHelp.targets" />
+  <ItemGroup Condition="Exists('$(MSBuildProjectDirectory)\$(HelpLineMarkdownTopicsRoot)')">
+    <EmbeddedResource Include="$(MSBuildProjectDirectory)\$(HelpLineMarkdownTopicsRoot)\**\*.md">
+      <LogicalName>$(AssemblyName).HelpLine.Docs.Topics.%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>

@@ -5,6 +5,11 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>HelpLine.HelpBuilderTests</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="TestResults\**" />
+    <EmbeddedResource Remove="TestResults\**" />
+    <None Remove="TestResults\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />

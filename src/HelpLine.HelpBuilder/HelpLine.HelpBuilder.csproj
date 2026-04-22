@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AssemblyName>HelpLine.HelpBuilder</AssemblyName>
-    <RootNamespace>HelpLine.HelpBuilder</RootNamespace>
+    <RootNamespace>System.CommandLine</RootNamespace>
     <PackageId>HelpLine.HelpBuilder</PackageId>
     <Description>Legacy HelpBuilder compatibility APIs for System.CommandLine.</Description>
     <PackageTags>System.CommandLine;Help;CLI;HelpBuilder</PackageTags>

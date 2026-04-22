@@ -2,7 +2,7 @@ using System.CommandLine.Help;
 using VerifyXunit;
 using Xunit;
 
-namespace HelpLine.Tests;
+namespace HelpLine.HelpBuilderTests;
 
 public class ApiCompatibilityApprovalTests
 {

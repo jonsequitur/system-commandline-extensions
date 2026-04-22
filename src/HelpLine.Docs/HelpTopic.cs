@@ -1,4 +1,4 @@
-namespace HelpLine.Markdown.Topics;
+namespace HelpLine.Docs;
 
 /// <summary>
 /// Represents an embedded Markdown help topic.

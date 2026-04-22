@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace HelpLine.Markdown.Rendering;
+namespace HelpLine.Docs;
 
 /// <summary>
 /// Renders Markdown content in a console-friendly form.

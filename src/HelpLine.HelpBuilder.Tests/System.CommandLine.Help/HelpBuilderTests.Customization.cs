@@ -9,7 +9,7 @@ using AwesomeAssertions;
 using Xunit;
 using static System.Environment;
 
-namespace HelpLine.Tests.Help;
+namespace HelpLine.HelpBuilderTests.Help;
 
 public partial class HelpBuilderTests
 {
@@ -271,14 +271,15 @@ public partial class HelpBuilderTests
                 command.Options.Add(defaultHelp);
             }
 
+            StringWriter writer = new();
             InvocationConfiguration config = new()
             {
-                Output = new StringWriter()
+                Output = writer
             };
 
             command.Parse("-h").Invoke(config);
 
-            var output = config.Output.ToString();
+            var output = writer.ToString();
 
             if (trimOneNewline)
             {

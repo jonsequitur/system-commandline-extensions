@@ -40,4 +40,4 @@ foreach ($file in $manifest.files) {
     [System.IO.File]::WriteAllText($destinationPath, $content, [System.Text.UTF8Encoding]::new($false))
 }
 
-Write-Host "HelpCompat sync completed from ref '$Ref'."
+Write-Host "HelpBuilder sync completed from ref '$Ref'."

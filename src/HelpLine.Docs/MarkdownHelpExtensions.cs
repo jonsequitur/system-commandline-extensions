@@ -1,11 +1,8 @@
 using System.CommandLine;
 using System.Reflection;
-using HelpLine.Markdown.Commands;
-using HelpLine.Markdown.Rendering;
-using HelpLine.Markdown.Topics;
 using System.CommandLine.Help;
 
-namespace HelpLine.Markdown;
+namespace HelpLine.Docs;
 
 /// <summary>
 /// Registers Markdown-backed help experiences for System.CommandLine commands.

@@ -1,10 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using HelpLine.Markdown.Options;
-using HelpLine.Markdown.Rendering;
-using HelpLine.Markdown.Topics;
 
-namespace HelpLine.Markdown.Commands;
+namespace HelpLine.Docs;
 
 /// <summary>
 /// Displays embedded Markdown help topics.

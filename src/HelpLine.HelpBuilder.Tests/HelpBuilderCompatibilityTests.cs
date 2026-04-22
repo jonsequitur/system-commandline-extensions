@@ -5,7 +5,7 @@ using AwesomeAssertions.Execution;
 using System.CommandLine.Help;
 using Xunit;
 
-namespace HelpLine.Tests;
+namespace HelpLine.HelpBuilderTests;
 
 public class HelpBuilderCompatibilityTests
 {

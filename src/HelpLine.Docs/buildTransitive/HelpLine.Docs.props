@@ -1,3 +1,5 @@
 <Project>
-  <Import Project="$(MSBuildThisFileDirectory)CommandLineMarkdownHelp.props" />
+  <PropertyGroup>
+    <HelpLineMarkdownTopicsRoot Condition="'$(HelpLineMarkdownTopicsRoot)' == ''">Docs</HelpLineMarkdownTopicsRoot>
+  </PropertyGroup>
 </Project>

@@ -1,5 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <HelpLineMarkdownTopicsRoot Condition="'$(HelpLineMarkdownTopicsRoot)' == ''">Help</HelpLineMarkdownTopicsRoot>
-  </PropertyGroup>
-</Project>

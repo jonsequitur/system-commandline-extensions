@@ -12,7 +12,11 @@ internal static class ApiContract
     public static string GenerateContractForAssembly(Assembly assembly)
     {
         StringBuilder output = new();
-        var types = assembly.GetExportedTypes().OrderBy(t => t.FullName).ToArray();
+        var types = assembly.GetExportedTypes()
+            .Where(t => !t.IsDefined(typeof(CompilerGeneratedAttribute), false)
+                        && !t.Name.Contains('<')
+                        && !t.Name.Contains('$'))
+            .OrderBy(t => t.FullName).ToArray();
         var namespaces = types.Select(t => t.Namespace ?? string.Empty).Distinct().OrderBy(n => n, StringComparer.Ordinal).ToArray();
 
         HashSet<MethodInfo> printedMethods = [];

@@ -101,7 +101,9 @@ jobs:
         run: dotnet build ./system-commandline-extensions.slnx --configuration Release --no-restore -p:VersionPrefix=${{ env.VERSION_PREFIX }} -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
 
       - name: Pack preview package
-        run: dotnet pack ./src/HelpLine/HelpLine.csproj --configuration Release --no-build --output ./artifacts -p:VersionPrefix=${{ env.VERSION_PREFIX }} -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
+        run: |
+          dotnet pack ./src/HelpLine.HelpBuilder/HelpLine.HelpBuilder.csproj --configuration Release --no-build --output ./artifacts -p:VersionPrefix=${{ env.VERSION_PREFIX }} -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
+          dotnet pack ./src/HelpLine.Docs/HelpLine.Docs.csproj --configuration Release --no-build --output ./artifacts -p:VersionPrefix=${{ env.VERSION_PREFIX }} -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
 
       - name: Publish preview package to GitHub Packages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -113,5 +115,5 @@ jobs:
       - name: Upload package artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: HelpLine-package-${{ env.PREVIEW_VERSION_SUFFIX }}
+          name: packages-${{ env.PREVIEW_VERSION_SUFFIX }}
           path: ./artifacts/*

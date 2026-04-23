@@ -4,12 +4,18 @@
     <RootNamespace>System.CommandLine</RootNamespace>
     <PackageId>HelpLine.HelpBuilder</PackageId>
     <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix>alpha</VersionSuffix>
     <Description>Legacy HelpBuilder compatibility APIs for System.CommandLine.</Description>
     <PackageTags>System.CommandLine;Help;CLI;HelpBuilder</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
     <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

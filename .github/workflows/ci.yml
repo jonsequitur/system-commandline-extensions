@@ -94,12 +94,12 @@ jobs:
         run: dotnet restore ./system-commandline-extensions.slnx
 
       - name: Build
-        run: dotnet build ./system-commandline-extensions.slnx --configuration Release --no-restore -p:VersionSuffix=alpha.${{ github.run_number }}
+        run: dotnet build ./system-commandline-extensions.slnx --configuration Release --no-restore
 
-      - name: Pack preview package
+      - name: Pack
         run: |
-          dotnet pack ./src/HelpLine.HelpBuilder/HelpLine.HelpBuilder.csproj --configuration Release --no-build --output ./artifacts -p:VersionSuffix=alpha.${{ github.run_number }}
-          dotnet pack ./src/HelpLine.Docs/HelpLine.Docs.csproj --configuration Release --no-build --output ./artifacts -p:VersionSuffix=alpha.${{ github.run_number }}
+          dotnet pack ./src/HelpLine.HelpBuilder/HelpLine.HelpBuilder.csproj --configuration Release --no-build --output ./artifacts
+          dotnet pack ./src/HelpLine.Docs/HelpLine.Docs.csproj --configuration Release --no-build --output ./artifacts
 
       - name: Publish preview package to GitHub Packages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

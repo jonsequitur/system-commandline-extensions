@@ -17,7 +17,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VERSION_PREFIX: 0.1.0
   PREVIEW_VERSION_SUFFIX: alpha.${{ github.run_number }}
 
 jobs:
@@ -98,12 +97,12 @@ jobs:
         run: dotnet restore ./system-commandline-extensions.slnx
 
       - name: Build
-        run: dotnet build ./system-commandline-extensions.slnx --configuration Release --no-restore -p:VersionPrefix=${{ env.VERSION_PREFIX }} -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
+        run: dotnet build ./system-commandline-extensions.slnx --configuration Release --no-restore -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
 
       - name: Pack preview package
         run: |
-          dotnet pack ./src/HelpLine.HelpBuilder/HelpLine.HelpBuilder.csproj --configuration Release --no-build --output ./artifacts -p:VersionPrefix=${{ env.VERSION_PREFIX }} -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
-          dotnet pack ./src/HelpLine.Docs/HelpLine.Docs.csproj --configuration Release --no-build --output ./artifacts -p:VersionPrefix=${{ env.VERSION_PREFIX }} -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
+          dotnet pack ./src/HelpLine.HelpBuilder/HelpLine.HelpBuilder.csproj --configuration Release --no-build --output ./artifacts -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
+          dotnet pack ./src/HelpLine.Docs/HelpLine.Docs.csproj --configuration Release --no-build --output ./artifacts -p:VersionSuffix=${{ env.PREVIEW_VERSION_SUFFIX }}
 
       - name: Publish preview package to GitHub Packages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

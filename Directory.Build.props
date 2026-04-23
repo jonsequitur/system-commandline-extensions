@@ -9,10 +9,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryType>git</RepositoryType>
-    <VersionPrefix Condition="'$(VersionPrefix)' == ''">0.1.0</VersionPrefix>
-    <Version Condition="'$(Version)' == '' and '$(VersionSuffix)' == ''">$(VersionPrefix)</Version>
-    <Version Condition="'$(Version)' == '' and '$(VersionSuffix)' != ''">$(VersionPrefix)-$(VersionSuffix)</Version>
-    <PackageVersion Condition="'$(PackageVersion)' == ''">$(Version)</PackageVersion>
+    <VersionPrefix Condition="'$(VersionPrefix)' == ''">0.0.0</VersionPrefix>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <IsPackable>true</IsPackable>
     <NoWarn>$(NoWarn);CS1591</NoWarn>

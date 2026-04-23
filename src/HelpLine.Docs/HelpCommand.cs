@@ -9,7 +9,7 @@ namespace HelpLine.Docs;
 public sealed class HelpCommand : Command
 {
     public HelpCommand(HelpTopicCatalog catalog, MarkdownHelpRenderer? renderer = null)
-        : base("help", "Displays Markdown help topics packaged with the application.")
+        : base("docs", "Displays Markdown help topics packaged with the application.")
     {
         Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         Renderer = renderer ?? new MarkdownHelpRenderer();

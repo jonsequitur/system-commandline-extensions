@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/jonsequitur/system-commandline-extensions/actions/workflows/ci.yml/badge.svg)](https://github.com/jonsequitur/system-commandline-extensions/actions/workflows/ci.yml)
 
-Libraries for extending [System.CommandLine](https://github.com/dotnet/command-line-api) help.
+Extensions for [System.CommandLine](https://github.com/dotnet/command-line-api) help.
 
 | Package | Description |
 |---------|-------------|

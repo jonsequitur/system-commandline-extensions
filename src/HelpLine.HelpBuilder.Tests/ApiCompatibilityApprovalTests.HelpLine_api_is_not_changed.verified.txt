@@ -34,6 +34,8 @@ System.CommandLine.Help
     public static System.Boolean ShouldShowDefaultValue(System.CommandLine.Argument argument)
     public static System.Func<HelpContext, System.Boolean> SubcommandsSection()
     public static System.Func<HelpContext, System.Boolean> SynopsisSection()
+  public static class HelpBuilderCommandExtensions
+    public static System.Void UseHelpBuilder(this System.CommandLine.Command command, HelpBuilder builder)
   public class HelpContext
     .ctor(HelpBuilder helpBuilder, System.CommandLine.Command command, System.IO.TextWriter output)
     public System.CommandLine.Command Command { get; }

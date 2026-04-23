@@ -13,10 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\HelpLine.HelpBuilder\HelpLine.HelpBuilder.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="buildTransitive\**\*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" Link="buildTransitive\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 

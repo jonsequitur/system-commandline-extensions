@@ -3,6 +3,7 @@
     <AssemblyName>HelpLine.Docs</AssemblyName>
     <RootNamespace>HelpLine.Docs</RootNamespace>
     <PackageId>HelpLine.Docs</PackageId>
+    <VersionPrefix>0.1.0</VersionPrefix>
     <Description>Markdown-backed help topics and rich help extensions for System.CommandLine.</Description>
     <PackageTags>System.CommandLine;Help;CLI;Markdown;Docs</PackageTags>
   </PropertyGroup>

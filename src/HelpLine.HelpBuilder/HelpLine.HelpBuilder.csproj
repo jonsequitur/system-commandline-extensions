@@ -3,6 +3,7 @@
     <AssemblyName>HelpLine.HelpBuilder</AssemblyName>
     <RootNamespace>System.CommandLine</RootNamespace>
     <PackageId>HelpLine.HelpBuilder</PackageId>
+    <VersionPrefix>0.1.0</VersionPrefix>
     <Description>Legacy HelpBuilder compatibility APIs for System.CommandLine.</Description>
     <PackageTags>System.CommandLine;Help;CLI;HelpBuilder</PackageTags>
   </PropertyGroup>

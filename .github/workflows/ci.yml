@@ -98,8 +98,8 @@ jobs:
 
       - name: Pack
         run: |
-          dotnet pack ./src/HelpLine.HelpBuilder/HelpLine.HelpBuilder.csproj --configuration Release --no-build --output ./artifacts
-          dotnet pack ./src/HelpLine.Docs/HelpLine.Docs.csproj --configuration Release --no-build --output ./artifacts
+          dotnet pack ./src/HelpLine.HelpBuilder/HelpLine.HelpBuilder.csproj --configuration Release --no-build --output ./artifacts -p:VersionSuffix=preview.${{ github.run_number }}
+          dotnet pack ./src/HelpLine.Docs/HelpLine.Docs.csproj --configuration Release --no-build --output ./artifacts -p:VersionSuffix=preview.${{ github.run_number }}
 
       - name: Publish preview package to GitHub Packages
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'

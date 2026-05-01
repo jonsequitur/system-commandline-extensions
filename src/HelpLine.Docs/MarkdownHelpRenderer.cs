@@ -1,4 +1,6 @@
-using System.Text.RegularExpressions;
+using Markdig;
+using Markdig.Extensions.Tables;
+using Markdig.Syntax;
 
 namespace HelpLine.Docs;
 
@@ -7,12 +9,10 @@ namespace HelpLine.Docs;
 /// </summary>
 public sealed class MarkdownHelpRenderer
 {
-    private static readonly Regex BoldExpression = new(@"(\*\*|__)(.+?)(\*\*|__)", RegexOptions.Compiled);
-
-    /// <summary>
-    /// Additional heading levels to offset when rendering.
-    /// </summary>
-    public int HeadingLevelOffset { get; init; } = 1;
+    internal static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
+        .UseAutoLinks()
+        .UsePipeTables()
+        .Build();
 
     /// <summary>
     /// Renders Markdown content to the provided text writer.
@@ -27,83 +27,61 @@ public sealed class MarkdownHelpRenderer
             return;
         }
 
-        foreach (var rawLine in markdown.Split(["\r\n", "\n"], StringSplitOptions.None))
+        Render(Markdown.Parse(markdown, Pipeline), writer);
+    }
+
+    /// <summary>
+    /// Renders an already-parsed Markdown document to the provided text writer.
+    /// </summary>
+    public void Render(MarkdownDocument document, TextWriter writer)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(writer);
+
+        var visitor = new PlainTextMarkdownVisitor(writer);
+
+        Walk(document, visitor);
+    }
+
+    private static void Walk(MarkdownDocument document, IMarkdownVisitor visitor)
+    {
+        foreach (var block in document)
         {
-            var line = rawLine.TrimEnd();
-
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                writer.WriteLine();
-                continue;
-            }
-
-            var headingLevel = CountHeadingLevel(line);
-
-            if (headingLevel > 0)
-            {
-                var title = line[headingLevel..].Trim();
-                WriteHeading(writer, title, headingLevel + HeadingLevelOffset);
-                continue;
-            }
-
-            if (line.StartsWith("- ") || line.StartsWith("* "))
-            {
-                writer.Write(" • ");
-                writer.WriteLine(ApplyInlineFormatting(line[2..], writer));
-                continue;
-            }
-
-            if (line.StartsWith("> "))
-            {
-                writer.Write("   ");
-                writer.WriteLine(ApplyInlineFormatting(line[2..], writer));
-                continue;
-            }
-
-            writer.WriteLine(ApplyInlineFormatting(line, writer));
+            VisitBlock(block, visitor);
         }
     }
 
-    private static string ApplyInlineFormatting(string value, TextWriter writer)
+    internal static void VisitBlock(Block block, IMarkdownVisitor visitor)
     {
-        return BoldExpression.Replace(value, match => Emphasize(match.Groups[2].Value, writer));
-    }
-
-    private static int CountHeadingLevel(string line)
-    {
-        var count = 0;
-
-        while (count < line.Length && line[count] == '#')
+        switch (block)
         {
-            count++;
+            case HeadingBlock heading:
+                visitor.VisitHeading(heading);
+                break;
+            case ParagraphBlock paragraph:
+                visitor.VisitParagraph(paragraph);
+                break;
+            case FencedCodeBlock fenced:
+                visitor.VisitFencedCode(fenced);
+                break;
+            case CodeBlock code:
+                visitor.VisitCode(code);
+                break;
+            case ListBlock list:
+                foreach (var item in list.OfType<ListItemBlock>())
+                {
+                    visitor.VisitListItem(item, list.IsOrdered);
+                }
+                break;
+            case QuoteBlock quote:
+                visitor.VisitQuote(quote);
+                break;
+            case ThematicBreakBlock rule:
+                visitor.VisitThematicBreak(rule);
+                break;
+            case Table table:
+                visitor.VisitTable(table);
+                break;
         }
-
-        return count > 0 && count < line.Length && char.IsWhiteSpace(line[count])
-            ? count
-            : 0;
-    }
-
-    private static void WriteHeading(TextWriter writer, string title, int level)
-    {
-        var prefix = new string('#', Math.Clamp(level, 1, 6));
-        writer.WriteLine(Colorize($"{prefix} {title}", writer, bold: true, colorCode: "96"));
-    }
-
-    private static string Emphasize(string text, TextWriter writer) => Colorize(text, writer, bold: true, colorCode: "93");
-
-    private static string Colorize(string text, TextWriter writer, bool bold, string colorCode)
-    {
-        if (!SupportsAnsi(writer))
-        {
-            return text;
-        }
-
-        var boldCode = bold ? "1;" : string.Empty;
-        return $"\u001b[{boldCode}{colorCode}m{text}\u001b[0m";
-    }
-
-    private static bool SupportsAnsi(TextWriter writer)
-    {
-        return ReferenceEquals(writer, Console.Out) && !Console.IsOutputRedirected;
     }
 }

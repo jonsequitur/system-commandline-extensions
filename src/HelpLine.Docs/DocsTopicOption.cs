@@ -4,14 +4,14 @@ using System.CommandLine.Completions;
 namespace HelpLine.Docs;
 
 /// <summary>
-/// Selects a Markdown help topic to display.
+/// Selects a Markdown documentation topic to display.
 /// </summary>
-public sealed class HelpTopicOption : Option<string?>
+internal sealed class DocsTopicOption : Option<string?>
 {
-    public HelpTopicOption(HelpTopicCatalog? catalog = null)
+    public DocsTopicOption(DocsTopicCatalog? catalog = null)
         : base("--topic", ["-t"])
     {
-        Description = "Displays a specific help topic.";
+        Description = "Displays a specific documentation topic.";
         HelpName = "topic";
 
         if (catalog is null)
@@ -19,6 +19,8 @@ public sealed class HelpTopicOption : Option<string?>
             return;
         }
 
+        var topicNames = catalog.Topics.Select(static topic => topic.Name).ToArray();
+        AcceptOnlyFromAmong(topicNames);
         CompletionSources.Add(_ => catalog.Topics.Select(static topic => new CompletionItem(topic.Name)));
     }
 }

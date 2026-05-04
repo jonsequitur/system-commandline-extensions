@@ -19,8 +19,6 @@ internal sealed class DocsTopicOption : Option<string?>
             return;
         }
 
-        var topicNames = catalog.Topics.Select(static topic => topic.Name).ToArray();
-        AcceptOnlyFromAmong(topicNames);
         CompletionSources.Add(_ => catalog.Topics.Select(static topic => new CompletionItem(topic.Name)));
     }
 }

@@ -17,14 +17,16 @@ public sealed class ListDocsTopicsCommand : Command
     internal static void WriteTopicList(TextWriter output, DocsTopicCatalog catalog)
     {
         output.WriteLine("Available documentation topics:");
+        output.WriteLine();
 
         foreach (var topic in catalog.Topics)
         {
-            output.WriteLine($"  {topic.Name} - {topic.Description}");
+            output.WriteLine($"  {topic.Name}");
         }
 
         output.WriteLine();
-        output.WriteLine("Use --topic <name> to display a specific topic.");
+        output.WriteLine("Usage example:");
+        output.WriteLine($"  {RootCommand.ExecutableName} docs --topic <topic-name>");
     }
 
     private sealed class ListAction(DocsTopicCatalog catalog) : SynchronousCommandLineAction

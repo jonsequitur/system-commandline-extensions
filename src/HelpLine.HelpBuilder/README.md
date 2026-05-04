@@ -28,4 +28,4 @@ helpBuilder.CustomizeLayout(_ =>
 rootCommand.UseHelpBuilder(helpBuilder);
 ```
 
-`UseHelpBuilder` applies the builder by relpacing the `HelpOption.Action` on all instances of `HelpOption` found in the target command or its descendants.
+`UseHelpBuilder` applies the builder by replacing the `HelpOption.Action` on all instances of `HelpOption` found in the target command or its descendants.

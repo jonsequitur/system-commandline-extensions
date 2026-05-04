@@ -7,26 +7,11 @@ namespace HelpLine.Docs.Tests;
 public class DocsCommandTests
 {
     [Fact]
-    public void Assembly_overload_discovers_topics_from_embedded_resources()
-    {
-        RootCommand rootCommand = new("sample");
-        rootCommand.AddDocsCommand(typeof(DocsCommandTests).Assembly);
-
-        var output = new StringWriter();
-        var exitCode = rootCommand.Parse("docs --topic getting-started").Invoke(new() { Output = output });
-
-        using var scope = new AssertionScope();
-        exitCode.Should().Be(0);
-        output.ToString().Should().Contain("Getting Started");
-        output.ToString().Should().Contain("install the tool");
-    }
-
-    [Fact]
     public void Assembly_without_docs_throws()
     {
         var assemblyWithoutDocs = typeof(object).Assembly;
 
-        var act = () => DocsTopicCatalog.FromAssemblyResources(assemblyWithoutDocs);
+        var act = () => DocsTopicCatalog.FromAssemblyResourcesByHeadingLevel(assemblyWithoutDocs, 1);
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*does not contain any embedded Markdown*");
@@ -35,10 +20,10 @@ public class DocsCommandTests
     [Fact]
     public void Docs_command_lists_and_renders_embedded_topics()
     {
-        var catalog = DocsTopicCatalog.FromAssemblyResources(typeof(DocsCommandTests).Assembly);
+        var catalog = DocsTopicCatalog.FromAssemblyResourcesByHeadingLevel(typeof(DocsCommandTests).Assembly, 1);
 
         RootCommand rootCommand = new("sample");
-        rootCommand.AddDocsCommand(catalog);
+        rootCommand.Add(new DocsCommand(catalog));
 
         var listOutput = new StringWriter();
         var listExitCode = rootCommand.Parse("docs").Invoke(new() { Output = listOutput });
@@ -63,7 +48,7 @@ public class DocsCommandTests
         var catalog = DocsTopicCatalog.FromMarkdownByHeadingLevel(markdown, 1);
 
         var rootCommand = new RootCommand("sample");
-        rootCommand.AddDocsCommand(catalog);
+        rootCommand.Add(new DocsCommand(catalog));
 
         var output = new StringWriter();
         var exitCode = rootCommand.Parse("docs --topic getting-started").Invoke(new() { Output = output });
@@ -82,7 +67,7 @@ public class DocsCommandTests
         var merged = DocsTopicCatalog.Merge(part1, part2);
 
         var rootCommand = new RootCommand("sample");
-        rootCommand.AddDocsCommand(merged);
+        rootCommand.Add(new DocsCommand(merged));
 
         var output = new StringWriter();
         var exitCode = rootCommand.Parse("docs --topic installation").Invoke(new() { Output = output });
@@ -106,7 +91,7 @@ public class DocsCommandTests
         });
 
         var rootCommand = new RootCommand("sample");
-        rootCommand.AddDocsCommand(catalog);
+        rootCommand.Add(new DocsCommand(catalog));
 
         var installOutput = new StringWriter();
         var troubleshootOutput = new StringWriter();
@@ -141,7 +126,7 @@ public class DocsCommandTests
         });
 
         var rootCommand = new RootCommand("sample");
-        rootCommand.AddDocsCommand(catalog);
+        rootCommand.Add(new DocsCommand(catalog));
 
         var docsOutput = new StringWriter();
         var docsExitCode = rootCommand.Parse("docs").Invoke(new() { Output = docsOutput });
@@ -160,7 +145,7 @@ public class DocsCommandTests
         var catalog = DocsTopicCatalog.FromMarkdownByHeadingLevel(markdown, 1);
 
         var rootCommand = new RootCommand("sample");
-        rootCommand.AddDocsCommand(catalog);
+        rootCommand.Add(new DocsCommand(catalog));
 
         var output = new StringWriter();
         var exitCode = rootCommand.Parse("docs").Invoke(new() { Output = output });

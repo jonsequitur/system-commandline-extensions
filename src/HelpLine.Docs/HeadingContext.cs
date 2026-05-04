@@ -24,7 +24,8 @@ public sealed class HeadingContext
             throw new ArgumentException("Topic names must be non-empty.", nameof(topicName));
         }
 
-        _topicNames.Add(topicName.Trim());
+        var normalized = topicName.Trim().ToLowerInvariant().Replace(' ', '-');
+        _topicNames.Add(normalized);
     }
 
     internal IReadOnlyList<string> MappedTopicNames => _topicNames.ToList();

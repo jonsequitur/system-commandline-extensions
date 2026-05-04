@@ -61,10 +61,11 @@ public sealed class DocsCommand : Command
                 return 0;
             }
 
-            _catalog.TryGetTopic(requestedTopic, out var topic);
-            _catalog.TryReadTopicText(topic!, out var markdown);
-
-            _renderer.Render(markdown ?? string.Empty, output);
+            if (_catalog.TryGetTopic(requestedTopic, out var topic) && 
+                _catalog.TryReadTopicText(topic, out var markdown))
+            {
+                _renderer.Render(markdown ?? string.Empty, output);
+            }
             return 0;
         }
     }

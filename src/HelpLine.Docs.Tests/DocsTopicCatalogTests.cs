@@ -59,6 +59,19 @@ public class DocsTopicCatalogTests
     }
 
     [Fact]
+    public void FromMarkdown_custom_mapper_normalizes_topic_names_to_cli_format()
+    {
+        var markdown = "# Commands\n\nDetails.\n\n# Quick Start\n\nStart here.\n";
+
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown, context =>
+        {
+            context.AppendToTopic(context.HeadingText);
+        });
+
+        catalog.Topics.Select(t => t.Name).Should().BeEquivalentTo(["commands", "quick-start"]);
+    }
+
+    [Fact]
     public void Merge_combines_catalogs_with_same_topic_name()
     {
         var part1 = DocsTopicCatalog.FromMarkdownByHeadingLevel("# guide\n\nPart one.\n", 1);

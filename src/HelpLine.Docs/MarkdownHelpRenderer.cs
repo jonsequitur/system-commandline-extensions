@@ -38,9 +38,16 @@ public sealed class MarkdownHelpRenderer
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(writer);
 
-        var visitor = new PlainTextMarkdownVisitor(writer);
+        IMarkdownVisitor visitor = ShouldUseSpectre(writer)
+            ? new SpectreMarkdownVisitor()
+            : new PlainTextMarkdownVisitor(writer);
 
         Walk(document, visitor);
+    }
+
+    private static bool ShouldUseSpectre(TextWriter writer)
+    {
+        return ReferenceEquals(writer, Console.Out) && !Console.IsOutputRedirected;
     }
 
     private static void Walk(MarkdownDocument document, IMarkdownVisitor visitor)

@@ -42,30 +42,108 @@ public sealed class DocsTopicCatalog
     private const string ResourceInfix = ".HelpLine.Docs.Topics.";
 
     /// <summary>
-    /// Discovers documentation topics in the provided assembly.
+    /// Discovers documentation topics in the provided assembly by parsing embedded resources as Markdown.
     /// Finds embedded resources matching the HelpLine.Docs.Topics convention.
+    /// Each resource is parsed as Markdown, with topics created based on the provided heading mapper.
     /// </summary>
-    public static DocsTopicCatalog FromAssemblyResources(Assembly assembly)
+    public static DocsTopicCatalog FromAssemblyResources(Assembly assembly, Action<HeadingContext> mapHeading)
     {
         ArgumentNullException.ThrowIfNull(assembly);
+        ArgumentNullException.ThrowIfNull(mapHeading);
 
         var prefix = assembly.GetName().Name + ResourceInfix;
+        var resourceNames = assembly
+                           .GetManifestResourceNames()
+                           .Where(resourceName => resourceName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                                                  && resourceName.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+                           .ToArray();
 
-        var topics = assembly
-                     .GetManifestResourceNames()
-                     .Where(resourceName => resourceName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-                                            && resourceName.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
-                     .Select(resourceName => CreateTopic(assembly, prefix, resourceName))
-                     .ToArray();
-
-        if (topics.Length == 0)
+        if (resourceNames.Length == 0)
         {
             throw new InvalidOperationException(
                 $"Assembly '{assembly.GetName().Name}' does not contain any embedded Markdown documentation resources. " +
                 $"Expected resources with prefix '{prefix}'.");
         }
 
-        return new DocsTopicCatalog(assembly, topics);
+        var mergedCatalogs = resourceNames
+                            .Select(resourceName => LoadResourceAndCreateCatalog(assembly, resourceName, mapHeading))
+                            .Where(catalog => catalog.Topics.Count > 0)
+                            .ToArray();
+
+        if (mergedCatalogs.Length == 0)
+        {
+            throw new InvalidOperationException(
+                $"No documentation topics found in assembly '{assembly.GetName().Name}'.");
+        }
+
+        return mergedCatalogs.Length == 1 ? mergedCatalogs[0] : Merge(mergedCatalogs);
+    }
+
+    /// <summary>
+    /// Discovers documentation topics in the provided assembly by parsing embedded resources as Markdown.
+    /// Finds embedded resources matching the HelpLine.Docs.Topics convention.
+    /// Each resource is parsed as Markdown, with topics created from headings at the specified level.
+    /// </summary>
+    public static DocsTopicCatalog FromAssemblyResourcesByHeadingLevel(Assembly assembly, int topicHeadingLevel)
+    {
+        ArgumentNullException.ThrowIfNull(assembly);
+        if (topicHeadingLevel < 1 || topicHeadingLevel > 6)
+            throw new ArgumentOutOfRangeException(nameof(topicHeadingLevel), "Heading level must be between 1 and 6.");
+
+        return FromAssemblyResources(assembly, context =>
+        {
+            if (context.HeadingLevel != topicHeadingLevel)
+            {
+                return;
+            }
+
+            var trimmed = context.HeadingText.Trim();
+            if (!string.IsNullOrEmpty(trimmed))
+            {
+                context.AppendToTopic(trimmed.ToLowerInvariant().Replace(' ', '-'));
+            }
+        });
+    }
+
+    /// <summary>
+    /// Builds a catalog by slicing a Markdown document at headings of the specified level.
+    /// Each heading at the target level begins a new topic section; its content runs until the next heading.
+    /// Sub-headings are included in the parent topic's content. Topic names are derived from heading text
+    /// (lowercase, spaces replaced with hyphens).
+    /// </summary>
+    public static DocsTopicCatalog FromMarkdownByHeadingLevel(string markdown, int topicHeadingLevel)
+    {
+        ArgumentNullException.ThrowIfNull(markdown);
+        if (topicHeadingLevel < 1 || topicHeadingLevel > 6)
+            throw new ArgumentOutOfRangeException(nameof(topicHeadingLevel), "Heading level must be between 1 and 6.");
+
+        return FromMarkdown(markdown, context =>
+        {
+            if (context.HeadingLevel != topicHeadingLevel)
+            {
+                return;
+            }
+
+            var trimmed = context.HeadingText.Trim();
+            if (!string.IsNullOrEmpty(trimmed))
+            {
+                context.AppendToTopic(trimmed.ToLowerInvariant().Replace(' ', '-'));
+            }
+        });
+    }
+
+    /// <summary>
+    /// Builds a catalog by slicing a Markdown document at headings identified by <paramref name="mapHeading"/>.
+    /// Each mapped heading begins a new topic section; its content runs until the next mapped heading.
+    /// A heading may map to multiple topic names, causing the same section to appear under each.
+    /// </summary>
+    public static DocsTopicCatalog FromMarkdown(string markdown, Action<HeadingContext> mapHeading)
+    {
+        ArgumentNullException.ThrowIfNull(markdown);
+        ArgumentNullException.ThrowIfNull(mapHeading);
+
+        var document = Markdown.Parse(markdown, MarkdownHelpRenderer.Pipeline);
+        return FromMarkdown(markdown, document, mapHeading);
     }
 
     /// <summary>
@@ -114,50 +192,12 @@ public sealed class DocsTopicCatalog
     }
 
     /// <summary>
-    /// Builds a catalog by slicing a Markdown document at headings of the specified level.
-    /// Each heading at the target level begins a new topic section; its content runs until the next heading.
-    /// Sub-headings are included in the parent topic's content. Topic names are derived from heading text
-    /// (lowercase, spaces replaced with hyphens).
-    /// </summary>
-    public static DocsTopicCatalog FromMarkdownByHeadingLevel(string markdown, int topicHeadingLevel)
-    {
-        ArgumentNullException.ThrowIfNull(markdown);
-        if (topicHeadingLevel < 1 || topicHeadingLevel > 6)
-            throw new ArgumentOutOfRangeException(nameof(topicHeadingLevel), "Heading level must be between 1 and 6.");
-
-        return FromMarkdown(markdown, context =>
-        {
-            if (context.HeadingLevel != topicHeadingLevel)
-            {
-                return;
-            }
-
-            var trimmed = context.HeadingText.Trim();
-            if (!string.IsNullOrEmpty(trimmed))
-            {
-                context.AppendToTopic(trimmed.ToLowerInvariant().Replace(' ', '-'));
-            }
-        });
-    }
-
-    /// <summary>
-    /// Builds a catalog by slicing a Markdown document at headings identified by <paramref name="mapHeading"/>.
-    /// Each mapped heading begins a new topic section; its content runs until the next mapped heading.
-    /// A heading may map to multiple topic names, causing the same section to appear under each.
-    /// </summary>
-    public static DocsTopicCatalog FromMarkdown(string markdown, Action<HeadingContext> mapHeading)
-    {
-        ArgumentNullException.ThrowIfNull(markdown);
-        ArgumentNullException.ThrowIfNull(mapHeading);
-
-        var document = Markdown.Parse(markdown, MarkdownHelpRenderer.Pipeline);
-        return FromMarkdown(markdown, document, mapHeading);
-    }
-
-    /// <summary>
     /// Internal method for slicing Markdown with a custom mapper. Use <see cref="FromMarkdownByHeadingLevel"/> for the public API.
     /// </summary>
-    private static DocsTopicCatalog FromMarkdown(string source, MarkdownDocument document, Action<HeadingContext> mapHeading)
+    private static DocsTopicCatalog FromMarkdown(
+        string source, 
+        MarkdownDocument document, 
+        Action<HeadingContext> mapHeading)
     {
         var sectionBlocks = new Dictionary<string, List<Block>>(StringComparer.OrdinalIgnoreCase);
         var currentTopicNames = new List<string>();
@@ -297,23 +337,13 @@ public sealed class DocsTopicCatalog
         return new DocsTopicCatalog(mergedTopics.Values, content);
     }
 
-    private static DocsTopic CreateTopic(Assembly assembly, string prefix, string resourceName)
+    private static DocsTopicCatalog LoadResourceAndCreateCatalog(Assembly assembly, string resourceName, Action<HeadingContext> mapHeading)
     {
-        var topicName = resourceName[prefix.Length..^3]; // strip prefix and ".md"
-        topicName = topicName.Replace('.', '-').Replace('\\', '-').Replace('/', '-').Trim('-');
+        using var stream = assembly.GetManifestResourceStream(resourceName) ?? throw new InvalidOperationException($"Resource '{resourceName}' not found.");
+        using var reader = new StreamReader(stream, leaveOpen: false);
+        var markdown = reader.ReadToEnd();
 
-        var displayName = topicName.Replace('-', ' ');
-        var description = "Embedded Markdown help topic.";
-
-        using var stream = assembly.GetManifestResourceStream(resourceName);
-        if (stream is not null)
-        {
-            using var reader = new StreamReader(stream, leaveOpen: false);
-            var markdown = reader.ReadToEnd();
-            description = ExtractDescription(markdown, displayName);
-        }
-
-        return new DocsTopic(topicName, displayName, description, resourceName);
+        return FromMarkdown(markdown, mapHeading);
     }
 
     private static string ExtractDescription(string markdown, string fallbackDisplayName)

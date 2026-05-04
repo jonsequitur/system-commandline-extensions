@@ -31,11 +31,13 @@ To use a different source folder, set the MSBuild property:
 using HelpLine.Docs;
 using System.CommandLine;
 
+var catalog = DocsTopicCatalog.FromAssemblyResourcesByHeadingLevel(typeof(Program).Assembly, 1);
+
 var rootCommand = new RootCommand("sample");
-rootCommand.AddDocsCommand();
+rootCommand.Add(new DocsCommand(catalog));
 ```
 
-This discovers embedded Markdown topics from the calling assembly and adds a `docs` subcommand.
+This discovers embedded Markdown topics from the specified assembly and adds a `docs` subcommand.
 
 ## 4. Use at runtime
 
@@ -48,15 +50,16 @@ Topic names come from the Markdown file names. For example, `Docs/getting-starte
 
 ## 5. Advanced usage
 
-To discover topics from a specific assembly:
+For full control over how headings map to topics, use the `FromAssemblyResources` overload with a heading mapper:
 
 ```csharp
-rootCommand.AddDocsCommand(typeof(Program).Assembly);
-```
+var catalog = DocsTopicCatalog.FromAssemblyResources(typeof(Program).Assembly, context =>
+{
+    if (context.HeadingLevel == 2)
+    {
+        context.AppendToTopic(context.HeadingText);
+    }
+});
 
-For full control over topic sources, construct a `DocsTopicCatalog` directly:
-
-```csharp
-var catalog = DocsTopicCatalog.FromAssemblyResources(typeof(Program).Assembly);
-rootCommand.AddDocsCommand(catalog);
+rootCommand.Add(new DocsCommand(catalog));
 ```

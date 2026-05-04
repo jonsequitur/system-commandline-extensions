@@ -33,6 +33,7 @@ public sealed class SpectreMarkdownVisitor : IMarkdownVisitor
         }
         else
         {
+            AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine($"[bold cyan]{Markup.Escape(title)}[/]");
             AnsiConsole.WriteLine();
         }
@@ -48,19 +49,27 @@ public sealed class SpectreMarkdownVisitor : IMarkdownVisitor
     /// <inheritdoc/>
     public void VisitCode(CodeBlock code)
     {
-        foreach (var line in code.Lines.Lines)
-        {
-            AnsiConsole.MarkupLine($"[dim]│[/] [grey]{Markup.Escape(line.Slice.ToString())}[/]");
-        }
-        AnsiConsole.WriteLine();
+        WriteCodeLines(code);
     }
 
     /// <inheritdoc/>
     public void VisitFencedCode(FencedCodeBlock code)
     {
-        foreach (var line in code.Lines.Lines)
+        WriteCodeLines(code);
+    }
+
+    private static void WriteCodeLines(LeafBlock code)
+    {
+        var allLines = code.Lines.Lines;
+        var lastNonEmpty = allLines.Length - 1;
+        while (lastNonEmpty >= 0 && string.IsNullOrWhiteSpace(allLines[lastNonEmpty].Slice.ToString()))
         {
-            AnsiConsole.MarkupLine($"[dim]│[/] [grey]{Markup.Escape(line.Slice.ToString())}[/]");
+            lastNonEmpty--;
+        }
+
+        for (var i = 0; i <= lastNonEmpty; i++)
+        {
+            AnsiConsole.MarkupLine($"[dim]│[/] [grey]{Markup.Escape(allLines[i].Slice.ToString())}[/]");
         }
         AnsiConsole.WriteLine();
     }
@@ -85,7 +94,7 @@ public sealed class SpectreMarkdownVisitor : IMarkdownVisitor
         {
             if (block is ParagraphBlock paragraph)
             {
-                AnsiConsole.MarkupLine($"[dim]┃[/] [italic]{RenderInlinesMarkup(paragraph.Inline)}[/italic]");
+                AnsiConsole.MarkupLine($"[dim]┃[/] [italic]{RenderInlinesMarkup(paragraph.Inline)}[/]");
             }
         }
         AnsiConsole.WriteLine();
@@ -185,11 +194,11 @@ public sealed class SpectreMarkdownVisitor : IMarkdownVisitor
     {
         LiteralInline literal => Markup.Escape(literal.Content.ToString()),
         CodeInline code => $"[grey]{Markup.Escape(code.Content)}[/]",
-        EmphasisInline emphasis when emphasis.DelimiterCount >= 2 => $"[bold]{RenderInlinesMarkup(emphasis)}[/bold]",
-        EmphasisInline emphasis => $"[italic]{RenderInlinesMarkup(emphasis)}[/italic]",
+        EmphasisInline emphasis when emphasis.DelimiterCount >= 2 => $"[bold]{RenderInlinesMarkup(emphasis)}[/]",
+        EmphasisInline emphasis => $"[italic]{RenderInlinesMarkup(emphasis)}[/]",
         LinkInline link => RenderInlinesMarkup(link),
         LineBreakInline => Environment.NewLine,
         ContainerInline container => RenderInlinesMarkup(container),
-        _ => string.Empty
+        _ => Markup.Escape(inline.ToString() ?? string.Empty)
     };
 }

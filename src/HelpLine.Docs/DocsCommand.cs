@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using Spectre.Console;
 
 namespace HelpLine.Docs;
 
@@ -57,7 +58,25 @@ public sealed class DocsCommand : Command
                     return 0;
                 }
 
-                ListDocsTopicsCommand.WriteTopicList(output, _catalog);
+                if (ReferenceEquals(output, Console.Out) && !Console.IsOutputRedirected)
+                {
+                    var prompt = new SelectionPrompt<string>();
+                    prompt.Title = "[bold]Select a topic:[/]";
+                    prompt.AddChoices(_catalog.Topics.Select(t => t.Name));
+
+                    var selected = AnsiConsole.Prompt(prompt);
+
+                    if (_catalog.TryGetTopic(selected, out var selectedTopic) &&
+                        _catalog.TryReadTopicText(selectedTopic, out var selectedMarkdown))
+                    {
+                        _renderer.Render(selectedMarkdown ?? string.Empty, output);
+                    }
+                }
+                else
+                {
+                    ListDocsTopicsCommand.WriteTopicList(output, _catalog);
+                }
+
                 return 0;
             }
 

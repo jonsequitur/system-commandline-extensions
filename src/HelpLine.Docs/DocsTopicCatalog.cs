@@ -111,7 +111,7 @@ public sealed class DocsTopicCatalog
     /// Sub-headings are included in the parent topic's content. Topic names are derived from heading text
     /// (lowercase, spaces replaced with hyphens).
     /// </summary>
-    public static DocsTopicCatalog FromMarkdownByHeadingLevel(string markdown, int topicHeadingLevel)
+    public static DocsTopicCatalog FromMarkdownByHeadingLevel(string markdown, int topicHeadingLevel, string? documentName = null)
     {
         ArgumentNullException.ThrowIfNull(markdown);
         if (topicHeadingLevel < 1 || topicHeadingLevel > 6)
@@ -129,7 +129,7 @@ public sealed class DocsTopicCatalog
             {
                 context.AppendToTopic(trimmed.ToLowerInvariant().Replace(' ', '-'));
             }
-        });
+        }, documentName);
     }
 
     /// <summary>
@@ -137,13 +137,13 @@ public sealed class DocsTopicCatalog
     /// Each mapped heading begins a new topic section; its content runs until the next mapped heading.
     /// A heading may map to multiple topic names, causing the same section to appear under each.
     /// </summary>
-    public static DocsTopicCatalog FromMarkdown(string markdown, Action<HeadingContext> mapHeading)
+    public static DocsTopicCatalog FromMarkdown(string markdown, Action<HeadingContext> mapHeading, string? documentName = null)
     {
         ArgumentNullException.ThrowIfNull(markdown);
         ArgumentNullException.ThrowIfNull(mapHeading);
 
         var document = Markdown.Parse(markdown, MarkdownHelpRenderer.Pipeline);
-        return FromMarkdown(markdown, document, mapHeading);
+        return FromMarkdown(markdown, document, mapHeading, documentName);
     }
 
     /// <summary>
@@ -197,18 +197,37 @@ public sealed class DocsTopicCatalog
     private static DocsTopicCatalog FromMarkdown(
         string source, 
         MarkdownDocument document, 
-        Action<HeadingContext> mapHeading)
+        Action<HeadingContext> mapHeading,
+        string? documentName = null)
     {
         var sectionBlocks = new Dictionary<string, List<Block>>(StringComparer.OrdinalIgnoreCase);
         var currentTopicNames = new List<string>();
         var pendingBlocks = new List<Block>();
+        var headingStack = new List<(int Level, string Text)>();
+
+        if (documentName is not null)
+        {
+            headingStack.Add((0, documentName));
+        }
 
         foreach (var block in document)
         {
             if (block is HeadingBlock heading)
             {
-                var context = new HeadingContext(GetHeadingText(heading), heading.Level);
+                var headingText = GetHeadingText(heading);
+
+                // Pop any headings at the same or deeper level
+                while (headingStack.Count > 0 && headingStack[^1].Level >= heading.Level)
+                {
+                    headingStack.RemoveAt(headingStack.Count - 1);
+                }
+
+                var parentText = headingStack.Count > 0 ? headingStack[^1].Text : null;
+
+                var context = new HeadingContext(headingText, heading.Level, parentText);
                 mapHeading(context);
+
+                headingStack.Add((heading.Level, headingText));
 
                 if (context.MappedTopicNames.Count > 0)
                 {
@@ -343,7 +362,29 @@ public sealed class DocsTopicCatalog
         using var reader = new StreamReader(stream, leaveOpen: false);
         var markdown = reader.ReadToEnd();
 
-        return FromMarkdown(markdown, mapHeading);
+        var docName = ExtractDocumentName(resourceName, assembly.GetName().Name);
+        return FromMarkdown(markdown, mapHeading, docName);
+    }
+
+    private static string ExtractDocumentName(string resourceName, string? assemblyName)
+    {
+        var name = resourceName;
+
+        if (assemblyName is not null)
+        {
+            var prefix = assemblyName + ResourceInfix;
+            if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                name = name[prefix.Length..];
+            }
+        }
+
+        if (name.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+        {
+            name = name[..^3];
+        }
+
+        return name.Replace('.', ' ').Replace('-', ' ').Replace('_', ' ');
     }
 
     private static string ExtractDescription(string markdown, string fallbackDisplayName)

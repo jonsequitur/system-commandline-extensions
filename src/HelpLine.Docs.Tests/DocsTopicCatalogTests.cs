@@ -110,4 +110,95 @@ public class DocsTopicCatalogTests
         text.Should().Contain("Run the installer.");
         text.Should().Contain("Use flags.");
     }
+
+    [Fact]
+    public void HeadingContext_ParentHeadingText_is_null_when_no_document_name()
+    {
+        var markdown = "# Top Level\n\nContent.\n";
+        string? observedParent = "not-set";
+
+        DocsTopicCatalog.FromMarkdown(markdown, context =>
+        {
+            observedParent = context.ParentHeadingText;
+            context.AppendToTopic("t");
+        });
+
+        observedParent.Should().BeNull();
+    }
+
+    [Fact]
+    public void HeadingContext_ParentHeadingText_is_document_name_for_H1()
+    {
+        var markdown = "# Top Level\n\nContent.\n";
+        string? observedParent = null;
+
+        DocsTopicCatalog.FromMarkdown(markdown, context =>
+        {
+            observedParent = context.ParentHeadingText;
+            context.AppendToTopic("t");
+        }, documentName: "my-doc");
+
+        observedParent.Should().Be("my-doc");
+    }
+
+    [Fact]
+    public void HeadingContext_ParentHeadingText_is_H1_text_for_H2()
+    {
+        var markdown = "# Document Title\n\n## Section\n\nContent.\n";
+        string? observedParent = null;
+
+        DocsTopicCatalog.FromMarkdown(markdown, context =>
+        {
+            if (context.HeadingLevel == 2)
+            {
+                observedParent = context.ParentHeadingText;
+            }
+            context.AppendToTopic(context.HeadingText);
+        });
+
+        observedParent.Should().Be("Document Title");
+    }
+
+    [Fact]
+    public void HeadingContext_ParentHeadingText_tracks_nearest_ancestor()
+    {
+        var markdown = "# Root\n\n## Parent\n\n### Child\n\nContent.\n";
+        string? h2Parent = null;
+        string? h3Parent = null;
+
+        DocsTopicCatalog.FromMarkdown(markdown, context =>
+        {
+            if (context.HeadingLevel == 2)
+            {
+                h2Parent = context.ParentHeadingText;
+            }
+            else if (context.HeadingLevel == 3)
+            {
+                h3Parent = context.ParentHeadingText;
+            }
+            context.AppendToTopic(context.HeadingText);
+        });
+
+        using var scope = new AssertionScope();
+        h2Parent.Should().Be("Root");
+        h3Parent.Should().Be("Parent");
+    }
+
+    [Fact]
+    public void HeadingContext_ParentHeadingText_resets_when_sibling_heading_appears()
+    {
+        var markdown = "# Doc\n\n## First\n\n### Deep\n\n## Second\n\nContent.\n";
+        string? secondParent = null;
+
+        DocsTopicCatalog.FromMarkdown(markdown, context =>
+        {
+            if (context.HeadingText == "Second")
+            {
+                secondParent = context.ParentHeadingText;
+            }
+            context.AppendToTopic(context.HeadingText);
+        });
+
+        secondParent.Should().Be("Doc");
+    }
 }

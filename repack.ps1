@@ -13,8 +13,8 @@ try
 
     # build and pack dotnet-interactive 
     dotnet clean -c debug
-    # dotnet build -c debug /p:Version=2.0.0
-    dotnet pack -c debug /p:PackageVersion="0.1.0-dev"
+    dotnet pack src/HelpLine.Docs -c debug /p:PackageVersion="0.1.0-dev"
+    dotnet pack src/HelpLine.HelpBuilder -c debug /p:PackageVersion="0.1.0-dev"
 
     # copy the HelpLine packages to the temp directory
     $destinationPath = "q:\temp\packages"

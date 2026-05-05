@@ -8,6 +8,8 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>Jon Sequeira</Authors>
+    <Copyright>Jon Sequeira</Copyright>
     <RepositoryType>git</RepositoryType>
     <VersionPrefix Condition="'$(VersionPrefix)' == ''">0.0.0</VersionPrefix>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>

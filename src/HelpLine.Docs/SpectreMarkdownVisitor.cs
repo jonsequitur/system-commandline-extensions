@@ -69,7 +69,7 @@ public sealed class SpectreMarkdownVisitor : IMarkdownVisitor
 
         for (var i = 0; i <= lastNonEmpty; i++)
         {
-            AnsiConsole.MarkupLine($"[dim]│[/] [grey]{Markup.Escape(allLines[i].Slice.ToString())}[/]");
+            AnsiConsole.MarkupLine($"[dim]  [/] [grey]{Markup.Escape(allLines[i].Slice.ToString())}[/]");
         }
         AnsiConsole.WriteLine();
     }

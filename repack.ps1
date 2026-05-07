@@ -11,7 +11,7 @@ try
     }
     Remove-Item -Recurse "$nugetCachePath\HelpLine.*" -Force
 
-    # build and pack dotnet-interactive 
+    # build and pack 
     dotnet clean -c debug
     dotnet pack src/HelpLine.Docs -c debug /p:PackageVersion="0.1.0-dev"
     dotnet pack src/HelpLine.HelpBuilder -c debug /p:PackageVersion="0.1.0-dev"

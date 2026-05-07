@@ -5,7 +5,7 @@
     <PackageId>HelpLine.Docs</PackageId>
     <VersionPrefix>0.1.0</VersionPrefix>
     <VersionSuffix>alpha</VersionSuffix>
-    <Description>Markdown-backed help topics and rich help extensions for System.CommandLine.</Description>
+    <Description>Embedded docs for your CLI using Markdown and System.CommandLine.</Description>
     <PackageTags>System.CommandLine;Help;CLI;Markdown;Docs</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>

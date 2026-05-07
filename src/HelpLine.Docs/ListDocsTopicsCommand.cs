@@ -31,11 +31,9 @@ public sealed class ListDocsTopicsCommand : Command
 
     private sealed class ListAction(DocsTopicCatalog catalog) : SynchronousCommandLineAction
     {
-        private readonly DocsTopicCatalog _catalog = catalog;
-
         public override int Invoke(ParseResult parseResult)
         {
-            WriteTopicList(parseResult.InvocationConfiguration.Output, _catalog);
+            WriteTopicList(parseResult.InvocationConfiguration.Output, catalog);
             return 0;
         }
     }

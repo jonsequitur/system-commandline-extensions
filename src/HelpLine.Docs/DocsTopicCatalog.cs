@@ -114,8 +114,10 @@ public sealed class DocsTopicCatalog
     public static DocsTopicCatalog FromMarkdownByHeadingLevel(string markdown, int topicHeadingLevel, string? documentName = null)
     {
         ArgumentNullException.ThrowIfNull(markdown);
-        if (topicHeadingLevel < 1 || topicHeadingLevel > 6)
+        if (topicHeadingLevel is < 1 or > 6)
+        {
             throw new ArgumentOutOfRangeException(nameof(topicHeadingLevel), "Heading level must be between 1 and 6.");
+        }
 
         return FromMarkdown(markdown, context =>
         {

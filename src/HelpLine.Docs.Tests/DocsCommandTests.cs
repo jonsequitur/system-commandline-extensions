@@ -155,4 +155,44 @@ public class DocsCommandTests
         output.ToString().Should().Contain("first");
         output.ToString().Should().Contain("second");
     }
+
+    [Fact]
+    public void Docs_command_all_prints_topics_in_source_order()
+    {
+        var markdown = "# Zebra\n\nFirst content.\n\n# Alpha\n\nSecond content.\n";
+        var catalog = DocsTopicCatalog.FromMarkdownByHeadingLevel(markdown, 1);
+
+        var rootCommand = new RootCommand("sample");
+        rootCommand.Add(new DocsCommand(catalog));
+
+        var output = new StringWriter();
+        var exitCode = rootCommand.Parse("docs --all").Invoke(new() { Output = output });
+        var rendered = output.ToString();
+
+        using var scope = new AssertionScope();
+        exitCode.Should().Be(0);
+        rendered.Should().Contain("Zebra");
+        rendered.Should().Contain("Alpha");
+        rendered.IndexOf("Zebra", StringComparison.Ordinal).Should().BeLessThan(rendered.IndexOf("Alpha", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Docs_command_without_options_lists_topics_in_source_order_when_output_is_redirected()
+    {
+        var markdown = "# Zebra\n\nFirst content.\n\n# Alpha\n\nSecond content.\n";
+        var catalog = DocsTopicCatalog.FromMarkdownByHeadingLevel(markdown, 1);
+
+        var rootCommand = new RootCommand("sample");
+        rootCommand.Add(new DocsCommand(catalog));
+
+        var output = new StringWriter();
+        var exitCode = rootCommand.Parse("docs").Invoke(new() { Output = output });
+        var rendered = output.ToString();
+
+        using var scope = new AssertionScope();
+        exitCode.Should().Be(0);
+        rendered.Should().Contain("zebra");
+        rendered.Should().Contain("alpha");
+        rendered.IndexOf("zebra", StringComparison.Ordinal).Should().BeLessThan(rendered.IndexOf("alpha", StringComparison.Ordinal));
+    }
 }

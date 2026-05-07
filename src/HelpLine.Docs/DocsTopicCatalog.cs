@@ -22,7 +22,7 @@ public sealed class DocsTopicCatalog
 
         _assembly = assembly;
         _inMemoryContent = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        Topics = topics.OrderBy(static topic => topic.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        Topics = topics.ToArray();
         _topicsByName = Topics.ToDictionary(static topic => topic.Name, StringComparer.OrdinalIgnoreCase);
     }
 
@@ -30,7 +30,7 @@ public sealed class DocsTopicCatalog
     {
         _assembly = null;
         _inMemoryContent = inMemoryContent;
-        Topics = topics.OrderBy(static topic => topic.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+        Topics = topics.ToArray();
         _topicsByName = Topics.ToDictionary(static topic => topic.Name, StringComparer.OrdinalIgnoreCase);
     }
 
@@ -203,6 +203,7 @@ public sealed class DocsTopicCatalog
         string? documentName = null)
     {
         var sectionBlocks = new Dictionary<string, List<Block>>(StringComparer.OrdinalIgnoreCase);
+        var topicOrder = new List<string>();
         var currentTopicNames = new List<string>();
         var pendingBlocks = new List<Block>();
         var headingStack = new List<(int Level, string Text)>();
@@ -233,7 +234,7 @@ public sealed class DocsTopicCatalog
 
                 if (context.MappedTopicNames.Count > 0)
                 {
-                    FlushPending(sectionBlocks, currentTopicNames, pendingBlocks);
+                    FlushPending(sectionBlocks, topicOrder, currentTopicNames, pendingBlocks);
                     currentTopicNames = context.MappedTopicNames
                                                .Distinct(StringComparer.OrdinalIgnoreCase)
                                                .ToList();
@@ -245,13 +246,15 @@ public sealed class DocsTopicCatalog
             pendingBlocks.Add(block);
         }
 
-        FlushPending(sectionBlocks, currentTopicNames, pendingBlocks);
+        FlushPending(sectionBlocks, topicOrder, currentTopicNames, pendingBlocks);
 
         var topics = new List<DocsTopic>();
         var content = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var (topicName, blocks) in sectionBlocks)
+        foreach (var topicName in topicOrder)
         {
+            var blocks = sectionBlocks[topicName];
+
             if (blocks.Count == 0)
             {
                 continue;
@@ -272,6 +275,7 @@ public sealed class DocsTopicCatalog
 
     private static void FlushPending(
         Dictionary<string, List<Block>> sectionBlocks,
+        List<string> topicOrder,
         List<string> topicNames,
         List<Block> pending)
     {
@@ -279,6 +283,7 @@ public sealed class DocsTopicCatalog
         {
             if (!sectionBlocks.TryGetValue(topicName, out var blocks))
             {
+                topicOrder.Add(topicName);
                 sectionBlocks[topicName] = blocks = [];
             }
 
@@ -324,14 +329,18 @@ public sealed class DocsTopicCatalog
     {
         ArgumentNullException.ThrowIfNull(catalogs);
 
-        var mergedTopics = new Dictionary<string, DocsTopic>(StringComparer.OrdinalIgnoreCase);
+        var mergedTopicsByName = new Dictionary<string, DocsTopic>(StringComparer.OrdinalIgnoreCase);
+        var mergedTopics = new List<DocsTopic>();
         var mergedContent = new Dictionary<string, StringBuilder>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var catalog in catalogs)
         {
             foreach (var topic in catalog.Topics)
             {
-                mergedTopics.TryAdd(topic.Name, topic);
+                if (mergedTopicsByName.TryAdd(topic.Name, topic))
+                {
+                    mergedTopics.Add(topic);
+                }
 
                 if (catalog.TryReadTopicText(topic, out var text) && text is not null)
                 {
@@ -355,7 +364,7 @@ public sealed class DocsTopicCatalog
             kv => kv.Value.ToString(),
             StringComparer.OrdinalIgnoreCase);
 
-        return new DocsTopicCatalog(mergedTopics.Values, content);
+        return new DocsTopicCatalog(mergedTopics, content);
     }
 
     private static DocsTopicCatalog LoadResourceAndCreateCatalog(Assembly assembly, string resourceName, Action<HeadingContext> mapHeading)

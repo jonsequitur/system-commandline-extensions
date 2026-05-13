@@ -9,7 +9,7 @@ public class DocsTopicCatalogTests
     public void FromMarkdown_ByLevel_creates_one_topic_per_heading()
     {
         var markdown = "# Getting Started\n\nInstall the tool.\n\n# Advanced Usage\n\nUse flags.\n";
-        var catalog = DocsTopicCatalog.FromMarkdownByHeadingLevel(markdown, 1);
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown);
 
         using var scope = new AssertionScope();
         catalog.Topics.Select(t => t.Name).Should().BeEquivalentTo(["getting-started", "advanced-usage"]);
@@ -74,8 +74,8 @@ public class DocsTopicCatalogTests
     [Fact]
     public void Merge_combines_catalogs_with_same_topic_name()
     {
-        var part1 = DocsTopicCatalog.FromMarkdownByHeadingLevel("# guide\n\nPart one.\n", 1);
-        var part2 = DocsTopicCatalog.FromMarkdownByHeadingLevel("# guide\n\nPart two.\n", 1);
+        var part1 = DocsTopicCatalog.FromMarkdown("# guide\n\nPart one.\n");
+        var part2 = DocsTopicCatalog.FromMarkdown("# guide\n\nPart two.\n");
 
         var merged = DocsTopicCatalog.Merge(part1, part2);
 
@@ -89,8 +89,8 @@ public class DocsTopicCatalogTests
     [Fact]
     public void Merge_keeps_distinct_topics_from_both_catalogs()
     {
-        var cat1 = DocsTopicCatalog.FromMarkdownByHeadingLevel("# alpha\n\nA.\n", 1);
-        var cat2 = DocsTopicCatalog.FromMarkdownByHeadingLevel("# beta\n\nB.\n", 1);
+        var cat1 = DocsTopicCatalog.FromMarkdown("# alpha\n\nA.\n");
+        var cat2 = DocsTopicCatalog.FromMarkdown("# beta\n\nB.\n");
 
         var merged = DocsTopicCatalog.Merge(cat1, cat2);
 
@@ -102,11 +102,11 @@ public class DocsTopicCatalogTests
     {
         // H2 sub-headings should be included in the H1 topic, not treated as boundaries
         var markdown = "# Guide\n\n## Install\n\nRun the installer.\n\n## Next Steps\n\nUse flags.\n";
-        var catalog = DocsTopicCatalog.FromMarkdownByHeadingLevel(markdown, 1);
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown);
 
         using var scope = new AssertionScope();
         catalog.Topics.Should().ContainSingle(t => t.Name == "guide");
-        catalog.TryReadTopicText(catalog.Topics.Single(), out var text).Should().BeTrue();
+        catalog.TryReadTopicText(catalog.Topics.Single(t => t.Name == "guide"), out var text).Should().BeTrue();
         text.Should().Contain("Run the installer.");
         text.Should().Contain("Use flags.");
     }
@@ -200,5 +200,69 @@ public class DocsTopicCatalogTests
         });
 
         secondParent.Should().Be("Doc");
+    }
+
+    [Fact]
+    public void FromMarkdown_default_creates_a_topic_for_every_heading_with_hierarchy()
+    {
+        var markdown = "# Quick Start\n\nGo.\n\n# Concepts\n\nIntro.\n\n## Measuring\n\nDetails.\n";
+
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown);
+
+        using var scope = new AssertionScope();
+        catalog.Topics.Select(t => t.Name).Should().BeEquivalentTo(["quick-start", "concepts", "measuring"]);
+        catalog.Topics.Single(t => t.Name == "quick-start").Level.Should().Be(1);
+        catalog.Topics.Single(t => t.Name == "quick-start").ParentName.Should().BeNull();
+        catalog.Topics.Single(t => t.Name == "concepts").Level.Should().Be(1);
+        catalog.Topics.Single(t => t.Name == "measuring").Level.Should().Be(2);
+        catalog.Topics.Single(t => t.Name == "measuring").ParentName.Should().Be("concepts");
+        catalog.Topics.Single(t => t.Name == "measuring").ShortName.Should().Be("measuring");
+    }
+
+    [Fact]
+    public void FromMarkdown_default_parent_topic_content_includes_descendant_sections()
+    {
+        var markdown = "# Concepts\n\nIntro.\n\n## Measuring\n\nMeasure details.\n\n# Other\n\nElsewhere.\n";
+
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown);
+
+        using var scope = new AssertionScope();
+        catalog.TryReadTopicText(catalog.Topics.Single(t => t.Name == "concepts"), out var concepts).Should().BeTrue();
+        concepts.Should().Contain("Intro.");
+        concepts.Should().Contain("Measure details.");
+        concepts.Should().NotContain("Elsewhere.");
+
+        catalog.TryReadTopicText(catalog.Topics.Single(t => t.Name == "measuring"), out var measuring).Should().BeTrue();
+        measuring.Should().Contain("Measure details.");
+        measuring.Should().NotContain("Intro.");
+    }
+
+    [Fact]
+    public void FromMarkdown_default_qualifies_names_when_short_names_collide()
+    {
+        var markdown = "# Cars\n\n## Overview\n\nCar overview.\n\n# Boats\n\n## Overview\n\nBoat overview.\n";
+
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown);
+
+        using var scope = new AssertionScope();
+        catalog.Topics.Select(t => t.Name).Should().BeEquivalentTo(["cars", "cars-overview", "boats", "boats-overview"]);
+
+        var carsOverview = catalog.Topics.Single(t => t.Name == "cars-overview");
+        carsOverview.ShortName.Should().Be("overview");
+        carsOverview.ParentName.Should().Be("cars");
+
+        var boatsOverview = catalog.Topics.Single(t => t.Name == "boats-overview");
+        boatsOverview.ShortName.Should().Be("overview");
+        boatsOverview.ParentName.Should().Be("boats");
+    }
+
+    [Fact]
+    public void FromMarkdown_default_does_not_qualify_when_short_name_is_unique()
+    {
+        var markdown = "# Cars\n\n## Wheels\n\nDetails.\n\n# Boats\n\n## Sails\n\nDetails.\n";
+
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown);
+
+        catalog.Topics.Select(t => t.Name).Should().BeEquivalentTo(["cars", "wheels", "boats", "sails"]);
     }
 }

@@ -101,17 +101,30 @@ public sealed class DocsCommand : Command
 
                 if (ReferenceEquals(output, Console.Out) && !Console.IsOutputRedirected)
                 {
-                    var prompt = new SelectionPrompt<string>();
+                    var choices = new List<TopicChoice>
+                    {
+                        new(AllTopicsLabel, TopicName: null),
+                    };
+
+                    foreach (var t in _catalog.Topics)
+                    {
+                        var indent = new string(' ', Math.Max(0, (t.Level - 1) * 2));
+                        choices.Add(new TopicChoice($"{indent}{t.ShortName}", t.Name));
+                    }
+
+                    var prompt = new SelectionPrompt<TopicChoice>();
                     prompt.Title = "[bold]Select a topic:[/]";
-                    prompt.AddChoices([AllTopicsLabel, .. _catalog.Topics.Select(static t => t.Name)]);
+                    prompt.UseConverter(static c => c.Display);
+                    prompt.AddChoices(choices);
 
                     var selected = AnsiConsole.Prompt(prompt);
 
-                    if (string.Equals(selected, AllTopicsLabel, StringComparison.Ordinal))
+                    if (selected.TopicName is null)
                     {
                         RenderAllTopics(output, _catalog, _renderer);
                     }
-                    else if (_catalog.TryGetTopic(selected, out var selectedTopic) &&
+                    else if (_catalog.TryGetTopic(selected.TopicName, out var selectedTopic) &&
+                        selectedTopic is not null &&
                         _catalog.TryReadTopicText(selectedTopic, out var selectedMarkdown))
                     {
                         _renderer.Render(selectedMarkdown ?? string.Empty, output);
@@ -125,12 +138,15 @@ public sealed class DocsCommand : Command
                 return 0;
             }
 
-            if (_catalog.TryGetTopic(requestedTopic, out var topic) && 
+            if (_catalog.TryGetTopic(requestedTopic, out var topic) &&
+                topic is not null &&
                 _catalog.TryReadTopicText(topic, out var markdown))
             {
                 _renderer.Render(markdown ?? string.Empty, output);
             }
             return 0;
         }
+
+        private sealed record TopicChoice(string Display, string? TopicName);
     }
 }

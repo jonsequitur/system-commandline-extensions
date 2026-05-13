@@ -11,7 +11,7 @@ public class DocsCommandTests
     {
         var assemblyWithoutDocs = typeof(object).Assembly;
 
-        var act = () => DocsTopicCatalog.FromAssemblyResourcesByHeadingLevel(assemblyWithoutDocs, 1);
+        var act = () => DocsTopicCatalog.FromAssemblyResources(assemblyWithoutDocs);
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*does not contain any embedded Markdown*");
@@ -20,7 +20,7 @@ public class DocsCommandTests
     [Fact]
     public void Docs_command_lists_and_renders_embedded_topics()
     {
-        var catalog = DocsTopicCatalog.FromAssemblyResourcesByHeadingLevel(typeof(DocsCommandTests).Assembly, 1);
+        var catalog = DocsTopicCatalog.FromAssemblyResources(typeof(DocsCommandTests).Assembly);
 
         RootCommand rootCommand = new("sample");
         rootCommand.Add(new DocsCommand(catalog));
@@ -45,7 +45,7 @@ public class DocsCommandTests
     public void FromMarkdown_registers_topics_with_docs_command()
     {
         var markdown = "# Getting Started\n\nInstall the tool.\n\n# Advanced Usage\n\nUse flags.\n";
-        var catalog = DocsTopicCatalog.FromMarkdownByHeadingLevel(markdown, 1);
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown);
 
         var rootCommand = new RootCommand("sample");
         rootCommand.Add(new DocsCommand(catalog));
@@ -62,8 +62,8 @@ public class DocsCommandTests
     [Fact]
     public void Merged_catalogs_register_combined_topics_with_docs_command()
     {
-        var part1 = DocsTopicCatalog.FromMarkdownByHeadingLevel("# Installation\n\nStep 1: Download.\n", 1);
-        var part2 = DocsTopicCatalog.FromMarkdownByHeadingLevel("# Installation\n\nStep 2: Configure.\n", 1);
+        var part1 = DocsTopicCatalog.FromMarkdown("# Installation\n\nStep 1: Download.\n");
+        var part2 = DocsTopicCatalog.FromMarkdown("# Installation\n\nStep 2: Configure.\n");
         var merged = DocsTopicCatalog.Merge(part1, part2);
 
         var rootCommand = new RootCommand("sample");
@@ -142,7 +142,7 @@ public class DocsCommandTests
     public void Docs_command_lists_all_topics_from_custom_catalog()
     {
         var markdown = "# First\n\nContent.\n\n# Second\n\nMore content.\n";
-        var catalog = DocsTopicCatalog.FromMarkdownByHeadingLevel(markdown, 1);
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown);
 
         var rootCommand = new RootCommand("sample");
         rootCommand.Add(new DocsCommand(catalog));
@@ -160,7 +160,7 @@ public class DocsCommandTests
     public void Docs_command_all_prints_topics_in_source_order()
     {
         var markdown = "# Zebra\n\nFirst content.\n\n# Alpha\n\nSecond content.\n";
-        var catalog = DocsTopicCatalog.FromMarkdownByHeadingLevel(markdown, 1);
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown);
 
         var rootCommand = new RootCommand("sample");
         rootCommand.Add(new DocsCommand(catalog));
@@ -180,7 +180,7 @@ public class DocsCommandTests
     public void Docs_command_without_options_lists_topics_in_source_order_when_output_is_redirected()
     {
         var markdown = "# Zebra\n\nFirst content.\n\n# Alpha\n\nSecond content.\n";
-        var catalog = DocsTopicCatalog.FromMarkdownByHeadingLevel(markdown, 1);
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown);
 
         var rootCommand = new RootCommand("sample");
         rootCommand.Add(new DocsCommand(catalog));
@@ -194,5 +194,25 @@ public class DocsCommandTests
         rendered.Should().Contain("zebra");
         rendered.Should().Contain("alpha");
         rendered.IndexOf("zebra", StringComparison.Ordinal).Should().BeLessThan(rendered.IndexOf("alpha", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Docs_command_list_indents_topics_by_heading_level()
+    {
+        var markdown = "# Quick Start\n\nGo.\n\n# Concepts\n\nIntro.\n\n## Measuring\n\nDetails.\n";
+        var catalog = DocsTopicCatalog.FromMarkdown(markdown);
+
+        var rootCommand = new RootCommand("sample");
+        rootCommand.Add(new DocsCommand(catalog));
+
+        var output = new StringWriter();
+        var exitCode = rootCommand.Parse("docs list").Invoke(new() { Output = output });
+        var rendered = output.ToString();
+
+        using var scope = new AssertionScope();
+        exitCode.Should().Be(0);
+        rendered.Should().Contain("  quick-start");
+        rendered.Should().Contain("  concepts");
+        rendered.Should().Contain("    measuring");
     }
 }

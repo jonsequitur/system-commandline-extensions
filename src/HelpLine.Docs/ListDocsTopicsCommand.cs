@@ -21,7 +21,8 @@ public sealed class ListDocsTopicsCommand : Command
 
         foreach (var topic in catalog.Topics)
         {
-            output.WriteLine($"  {topic.Name}");
+            var indent = new string(' ', 2 + Math.Max(0, (topic.Level - 1) * 2));
+            output.WriteLine($"{indent}{topic.ShortName}");
         }
 
         output.WriteLine();

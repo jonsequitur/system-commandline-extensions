@@ -43,13 +43,25 @@ public sealed class DocsTopicCatalog
 
     /// <summary>
     /// Discovers documentation topics in the provided assembly by parsing embedded resources as Markdown.
-    /// Finds embedded resources matching the HelpLine.Docs.Topics convention.
-    /// Each resource is parsed as Markdown, with topics created based on the provided heading mapper.
+    /// Each heading in each document becomes a topic, and the heading hierarchy is preserved on the resulting <see cref="DocsTopic"/> records.
+    /// When two topics share a short name, both are renamed to <c>{parent.Name}-{shortName}</c> so they can be selected unambiguously via <c>--topic</c>.
+    /// </summary>
+    public static DocsTopicCatalog FromAssemblyResources(Assembly assembly)
+        => FromAssemblyResourcesCore(assembly, mapHeading: null);
+
+    /// <summary>
+    /// Discovers documentation topics in the provided assembly by parsing embedded resources as Markdown.
+    /// Use the overload without <paramref name="mapHeading"/> for the default hierarchical behavior.
     /// </summary>
     public static DocsTopicCatalog FromAssemblyResources(Assembly assembly, Action<HeadingContext> mapHeading)
     {
-        ArgumentNullException.ThrowIfNull(assembly);
         ArgumentNullException.ThrowIfNull(mapHeading);
+        return FromAssemblyResourcesCore(assembly, mapHeading);
+    }
+
+    private static DocsTopicCatalog FromAssemblyResourcesCore(Assembly assembly, Action<HeadingContext>? mapHeading)
+    {
+        ArgumentNullException.ThrowIfNull(assembly);
 
         var prefix = assembly.GetName().Name + ResourceInfix;
         var resourceNames = assembly
@@ -80,72 +92,30 @@ public sealed class DocsTopicCatalog
     }
 
     /// <summary>
-    /// Discovers documentation topics in the provided assembly by parsing embedded resources as Markdown.
-    /// Finds embedded resources matching the HelpLine.Docs.Topics convention.
-    /// Each resource is parsed as Markdown, with topics created from headings at the specified level.
+    /// Builds a catalog from a Markdown document using the default hierarchical mapping: every heading becomes a topic,
+    /// nested under its enclosing heading. When two topics share a short name, their <see cref="DocsTopic.Name"/> values are
+    /// qualified with parent names to disambiguate.
     /// </summary>
-    public static DocsTopicCatalog FromAssemblyResourcesByHeadingLevel(Assembly assembly, int topicHeadingLevel)
-    {
-        ArgumentNullException.ThrowIfNull(assembly);
-        if (topicHeadingLevel < 1 || topicHeadingLevel > 6)
-            throw new ArgumentOutOfRangeException(nameof(topicHeadingLevel), "Heading level must be between 1 and 6.");
-
-        return FromAssemblyResources(assembly, context =>
-        {
-            if (context.HeadingLevel != topicHeadingLevel)
-            {
-                return;
-            }
-
-            var trimmed = context.HeadingText.Trim();
-            if (!string.IsNullOrEmpty(trimmed))
-            {
-                context.AppendToTopic(trimmed.ToLowerInvariant().Replace(' ', '-'));
-            }
-        });
-    }
-
-    /// <summary>
-    /// Builds a catalog by slicing a Markdown document at headings of the specified level.
-    /// Each heading at the target level begins a new topic section; its content runs until the next heading.
-    /// Sub-headings are included in the parent topic's content. Topic names are derived from heading text
-    /// (lowercase, spaces replaced with hyphens).
-    /// </summary>
-    public static DocsTopicCatalog FromMarkdownByHeadingLevel(string markdown, int topicHeadingLevel, string? documentName = null)
-    {
-        ArgumentNullException.ThrowIfNull(markdown);
-        if (topicHeadingLevel is < 1 or > 6)
-        {
-            throw new ArgumentOutOfRangeException(nameof(topicHeadingLevel), "Heading level must be between 1 and 6.");
-        }
-
-        return FromMarkdown(markdown, context =>
-        {
-            if (context.HeadingLevel != topicHeadingLevel)
-            {
-                return;
-            }
-
-            var trimmed = context.HeadingText.Trim();
-            if (!string.IsNullOrEmpty(trimmed))
-            {
-                context.AppendToTopic(trimmed.ToLowerInvariant().Replace(' ', '-'));
-            }
-        }, documentName);
-    }
+    public static DocsTopicCatalog FromMarkdown(string markdown, string? documentName = null)
+        => FromMarkdownCore(markdown, mapHeading: null, documentName);
 
     /// <summary>
     /// Builds a catalog by slicing a Markdown document at headings identified by <paramref name="mapHeading"/>.
-    /// Each mapped heading begins a new topic section; its content runs until the next mapped heading.
+    /// Each mapped topic's content runs from its heading until the next heading at the same or shallower level.
     /// A heading may map to multiple topic names, causing the same section to appear under each.
     /// </summary>
     public static DocsTopicCatalog FromMarkdown(string markdown, Action<HeadingContext> mapHeading, string? documentName = null)
     {
-        ArgumentNullException.ThrowIfNull(markdown);
         ArgumentNullException.ThrowIfNull(mapHeading);
+        return FromMarkdownCore(markdown, mapHeading, documentName);
+    }
+
+    private static DocsTopicCatalog FromMarkdownCore(string markdown, Action<HeadingContext>? mapHeading, string? documentName)
+    {
+        ArgumentNullException.ThrowIfNull(markdown);
 
         var document = Markdown.Parse(markdown, MarkdownHelpRenderer.Pipeline);
-        return FromMarkdown(markdown, document, mapHeading, documentName);
+        return SliceMarkdown(markdown, document, mapHeading, documentName);
     }
 
     /// <summary>
@@ -193,25 +163,26 @@ public sealed class DocsTopicCatalog
         return true;
     }
 
-    /// <summary>
-    /// Internal method for slicing Markdown with a custom mapper. Use <see cref="FromMarkdownByHeadingLevel"/> for the public API.
-    /// </summary>
-    private static DocsTopicCatalog FromMarkdown(
-        string source, 
-        MarkdownDocument document, 
-        Action<HeadingContext> mapHeading,
-        string? documentName = null)
+    private sealed class TopicEntry
     {
-        var sectionBlocks = new Dictionary<string, List<Block>>(StringComparer.OrdinalIgnoreCase);
-        var topicOrder = new List<string>();
-        var currentTopicNames = new List<string>();
-        var pendingBlocks = new List<Block>();
-        var headingStack = new List<(int Level, string Text)>();
+        public string ShortName { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public int Level { get; set; }
+        public int? ParentEntryIndex { get; set; }
+        public string? ParentName { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
+        public Block FirstBlock { get; set; } = null!;
+        public Block LastBlock { get; set; } = null!;
+    }
 
-        if (documentName is not null)
-        {
-            headingStack.Add((0, documentName));
-        }
+    private static DocsTopicCatalog SliceMarkdown(
+        string source,
+        MarkdownDocument document,
+        Action<HeadingContext>? mapHeading,
+        string? documentName)
+    {
+        var entries = new List<TopicEntry>();
+        var openStack = new List<int>(); // indices into entries currently open
 
         foreach (var block in document)
         {
@@ -219,76 +190,129 @@ public sealed class DocsTopicCatalog
             {
                 var headingText = GetHeadingText(heading);
 
-                // Pop any headings at the same or deeper level
-                while (headingStack.Count > 0 && headingStack[^1].Level >= heading.Level)
+                // Compute "would-be parent" by peeking past topics that this heading would close,
+                // for the HeadingContext.ParentHeadingText callback. The actual openStack is only
+                // mutated when the heading produces topics, so unmapped headings don't close prior
+                // topics in the custom-mapper path (preserving the prior "until next mapped" semantics).
+                var peekParentIndex = openStack.Count - 1;
+                while (peekParentIndex >= 0 && entries[openStack[peekParentIndex]].Level >= heading.Level)
                 {
-                    headingStack.RemoveAt(headingStack.Count - 1);
+                    peekParentIndex--;
+                }
+                var peekParentText = peekParentIndex >= 0 ? entries[openStack[peekParentIndex]].DisplayName : documentName;
+
+                List<string> mappedNames;
+                if (mapHeading is null)
+                {
+                    var normalized = NormalizeName(headingText);
+                    mappedNames = normalized.Length == 0 ? [] : [normalized];
+                }
+                else
+                {
+                    var context = new HeadingContext(headingText, heading.Level, peekParentText);
+                    mapHeading(context);
+                    mappedNames = context.MappedTopicNames
+                                         .Distinct(StringComparer.OrdinalIgnoreCase)
+                                         .ToList();
                 }
 
-                var parentText = headingStack.Count > 0 ? headingStack[^1].Text : null;
-
-                var context = new HeadingContext(headingText, heading.Level, parentText);
-                mapHeading(context);
-
-                headingStack.Add((heading.Level, headingText));
-
-                if (context.MappedTopicNames.Count > 0)
+                if (mappedNames.Count > 0)
                 {
-                    FlushPending(sectionBlocks, topicOrder, currentTopicNames, pendingBlocks);
-                    currentTopicNames = context.MappedTopicNames
-                                               .Distinct(StringComparer.OrdinalIgnoreCase)
-                                               .ToList();
-                    pendingBlocks = [block];
-                    continue;
+                    while (openStack.Count > 0 && entries[openStack[^1]].Level >= heading.Level)
+                    {
+                        openStack.RemoveAt(openStack.Count - 1);
+                    }
+
+                    var parentIndex = openStack.Count > 0 ? openStack[^1] : (int?)null;
+
+                    foreach (var name in mappedNames)
+                    {
+                        var entry = new TopicEntry
+                        {
+                            ShortName = name,
+                            Name = name,
+                            Level = heading.Level,
+                            ParentEntryIndex = parentIndex,
+                            ParentName = parentIndex.HasValue ? entries[parentIndex.Value].Name : null,
+                            DisplayName = headingText,
+                            FirstBlock = block,
+                            LastBlock = block,
+                        };
+                        entries.Add(entry);
+                        openStack.Add(entries.Count - 1);
+                    }
                 }
             }
 
-            pendingBlocks.Add(block);
+            foreach (var idx in openStack)
+            {
+                entries[idx].LastBlock = block;
+            }
         }
 
-        FlushPending(sectionBlocks, topicOrder, currentTopicNames, pendingBlocks);
+        // Collision handling: any short name shared across multiple entries from different headings
+        // gets qualified using the parent topic chain. Entries are in document order so parents are
+        // qualified before their children, ensuring children inherit the qualified parent name.
+        var shortNameCounts = entries
+            .GroupBy(e => e.ShortName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var entry in entries)
+        {
+            if (shortNameCounts[entry.ShortName] > 1 && entry.ParentEntryIndex.HasValue)
+            {
+                var parent = entries[entry.ParentEntryIndex.Value];
+                entry.Name = $"{parent.Name}-{entry.ShortName}";
+            }
+        }
+
+        // Update ParentName to reflect any qualification of the parent's Name.
+        foreach (var entry in entries)
+        {
+            if (entry.ParentEntryIndex.HasValue)
+            {
+                entry.ParentName = entries[entry.ParentEntryIndex.Value].Name;
+            }
+        }
 
         var topics = new List<DocsTopic>();
         var content = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        foreach (var topicName in topicOrder)
+        foreach (var entry in entries)
         {
-            var blocks = sectionBlocks[topicName];
+            var topicContent = source[entry.FirstBlock.Span.Start..(entry.LastBlock.Span.End + 1)].TrimEnd();
+            var description = ExtractDescription(topicContent, entry.DisplayName);
 
-            if (blocks.Count == 0)
+            if (seenNames.Add(entry.Name))
             {
-                continue;
+                content[entry.Name] = topicContent;
+                topics.Add(new DocsTopic(
+                    entry.Name,
+                    entry.DisplayName,
+                    description,
+                    ResourceName: null,
+                    Level: entry.Level,
+                    ParentName: entry.ParentName)
+                {
+                    ShortName = entry.ShortName,
+                });
             }
-
-            var topicContent = source[blocks[0].Span.Start..(blocks[^1].Span.End + 1)].TrimEnd();
-            var displayName = blocks[0] is HeadingBlock h
-                                  ? GetHeadingText(h)
-                                  : topicName.Replace('-', ' ');
-            var description = ExtractDescription(topicContent, displayName);
-
-            content[topicName] = topicContent;
-            topics.Add(new DocsTopic(topicName, displayName, description, ResourceName: null));
+            else
+            {
+                // Same Name appearing twice (custom mapper assigning same name to multiple headings):
+                // concatenate content into the existing topic, matching the prior merge behavior.
+                content[entry.Name] = content[entry.Name] + Environment.NewLine + topicContent;
+            }
         }
 
         return new DocsTopicCatalog(topics, content);
     }
 
-    private static void FlushPending(
-        Dictionary<string, List<Block>> sectionBlocks,
-        List<string> topicOrder,
-        List<string> topicNames,
-        List<Block> pending)
+    private static string NormalizeName(string text)
     {
-        foreach (var topicName in topicNames)
-        {
-            if (!sectionBlocks.TryGetValue(topicName, out var blocks))
-            {
-                topicOrder.Add(topicName);
-                sectionBlocks[topicName] = blocks = [];
-            }
-
-            blocks.AddRange(pending);
-        }
+        var trimmed = text.Trim();
+        return trimmed.Length == 0 ? string.Empty : trimmed.ToLowerInvariant().Replace(' ', '-');
     }
 
     private static string GetHeadingText(HeadingBlock heading)
@@ -367,14 +391,14 @@ public sealed class DocsTopicCatalog
         return new DocsTopicCatalog(mergedTopics, content);
     }
 
-    private static DocsTopicCatalog LoadResourceAndCreateCatalog(Assembly assembly, string resourceName, Action<HeadingContext> mapHeading)
+    private static DocsTopicCatalog LoadResourceAndCreateCatalog(Assembly assembly, string resourceName, Action<HeadingContext>? mapHeading)
     {
         using var stream = assembly.GetManifestResourceStream(resourceName) ?? throw new InvalidOperationException($"Resource '{resourceName}' not found.");
         using var reader = new StreamReader(stream, leaveOpen: false);
         var markdown = reader.ReadToEnd();
 
         var docName = ExtractDocumentName(resourceName, assembly.GetName().Name);
-        return FromMarkdown(markdown, mapHeading, docName);
+        return FromMarkdownCore(markdown, mapHeading, docName);
     }
 
     private static string ExtractDocumentName(string resourceName, string? assemblyName)

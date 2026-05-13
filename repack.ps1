@@ -22,6 +22,12 @@ try
         New-Item -Path $destinationPath -ItemType Directory -Force
     }
     Get-ChildItem -Recurse -Filter *.nupkg | Move-Item -Destination $destinationPath -Force
+
+    Write-Host ""
+    Write-Host "Packages written to: $destinationPath" -ForegroundColor Green
+    Get-ChildItem -Path $destinationPath -Filter *.nupkg | Sort-Object Name | ForEach-Object {
+        Write-Host "  $($_.Name)"
+    }
 }
 finally
 {

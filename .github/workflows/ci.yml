@@ -52,7 +52,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path ./artifacts/test-results/${{ matrix.os }} | Out-Null
-          dotnet test ./system-commandline-extensions.slnx --configuration Release --no-build --logger:"trx;LogFileName=test-results.trx" --results-directory ./artifacts/test-results/${{ matrix.os }}
+          dotnet test --solution ./system-commandline-extensions.slnx --configuration Release --no-build --results-directory ./artifacts/test-results/${{ matrix.os }} --report-trx
 
       - name: Upload test artifacts
         if: always()

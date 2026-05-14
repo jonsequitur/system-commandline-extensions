@@ -20,7 +20,7 @@ https://nuget.pkg.github.com/jonsequitur/index.json
 # Developer Guide
 
 
-Run `eng/Update-HelpCompatFromUpstream.ps1` to refresh the vendored `HelpCompat` files **and the copied `HelpBuilder` test coverage** from the latest `dotnet/command-line-api` source. The API compatibility snapshot tests are intentionally maintained locally in this repo.
+Run `eng/Update-HelpCompatFromUpstream.ps1` to refresh the `HelpCompat` files **and the copied `HelpBuilder` test coverage** from the latest `dotnet/command-line-api` source. The API compatibility snapshot tests are intentionally maintained locally in this repo.
 
 ## Build
 

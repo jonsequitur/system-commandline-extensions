@@ -836,7 +836,9 @@ namespace HelpLine.HelpBuilderTests.Help
 
         [Theory]
         [InlineData("")]
+#pragma warning disable xUnit1012
         [InlineData(null)]
+#pragma warning restore xUnit1012
         public void Help_does_not_show_default_value_for_argument_when_default_value_is_null_or_empty(string defaultValue)
         {
             var argument = new Argument<string>("the-arg")
@@ -861,7 +863,9 @@ namespace HelpLine.HelpBuilderTests.Help
 
         [Theory]
         [InlineData("")]
+#pragma warning disable xUnit1012
         [InlineData(null)]
+#pragma warning restore xUnit1012
         public void Help_does_not_show_default_value_for_option_when_default_value_is_null_or_empty(string defaultValue)
         {
             var argument = new Option<string>("--opt")

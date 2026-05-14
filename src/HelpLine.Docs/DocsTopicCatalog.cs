@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using Markdig;
@@ -121,7 +122,7 @@ public sealed class DocsTopicCatalog
     /// <summary>
     /// Tries to find a topic by name.
     /// </summary>
-    public bool TryGetTopic(string? name, out DocsTopic? topic)
+    public bool TryGetTopic(string? name, [NotNullWhen(true)] out DocsTopic? topic)
     {
         if (string.IsNullOrWhiteSpace(name))
         {

@@ -12,10 +12,9 @@
 
   <ItemGroup>
     <PackageReference Include="AwesomeAssertions" />
-    <PackageReference Include="Markdig" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Markdig.Signed" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" />
     <PackageReference Include="Verify.XunitV3" />
-    <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="xunit.v3" />
   </ItemGroup>
 

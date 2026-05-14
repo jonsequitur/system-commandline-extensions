@@ -3,7 +3,6 @@
 
 using AwesomeAssertions;
 using System.CommandLine;
-using Microsoft.VisualStudio.TestPlatform.Utilities;
 using System.Collections.Generic;
 using System.CommandLine.Help;
 using System.IO;
@@ -525,11 +524,11 @@ public partial class HelpBuilderTests
 
             command.Parse("-h").Invoke(config);
 
-            var output = config.Output.ToString();
+            var output = config.Output.ToString() ?? "";
 
             if (trimOneNewline)
             {
-                output = output.Substring(0, output.Length - NewLine.Length);
+                output = output[..^NewLine.Length];
             }
 
             return output;

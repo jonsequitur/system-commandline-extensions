@@ -26,6 +26,6 @@ Run `eng/Update-HelpCompatFromUpstream.ps1` to refresh the vendored `HelpCompat`
 
 ```powershell
 dotnet build .\system-commandline-extensions.slnx
-dotnet test .\system-commandline-extensions.slnx
+dotnet test --solution .\system-commandline-extensions.slnx
 ```
 

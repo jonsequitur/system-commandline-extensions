@@ -11,7 +11,7 @@ internal sealed class DocsTopicOption : Option<string?>
     public DocsTopicOption(DocsTopicCatalog? catalog = null)
         : base("--topic", ["-t"])
     {
-        Description = "Displays a specific documentation topic.";
+        Description = "Displays detailed documentation for a specific topic";
         HelpName = "topic";
 
         if (catalog is null)

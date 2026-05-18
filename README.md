@@ -4,10 +4,10 @@
 
 Extensions for [System.CommandLine](https://github.com/dotnet/command-line-api) help.
 
-| Package | Description |
-|---------|-------------|
-| [HelpLine.Docs](src/HelpLine.Docs) | Provide rich documentation directly in your CLI app using Markdown |
-| [HelpLine.HelpBuilder](src/HelpLine.HelpBuilder) | Source-compatible adapter for the System.CommandLine `HelpBuilder` APIs |
+| Package | NuGet | Description |
+|---------|-------|-------------|
+| [HelpLine.Docs](src/HelpLine.Docs) | [![NuGet](https://img.shields.io/nuget/v/HelpLine.Docs?logo=nuget)](https://www.nuget.org/packages/HelpLine.Docs/) | Provide rich documentation directly in your CLI app using Markdown |
+| [HelpLine.HelpBuilder](src/HelpLine.HelpBuilder) | [![NuGet](https://img.shields.io/nuget/v/HelpLine.HelpBuilder?logo=nuget)](https://www.nuget.org/packages/HelpLine.HelpBuilder/) | Source-compatible adapter for the System.CommandLine `HelpBuilder` APIs |
 
 ## Preview packages
 

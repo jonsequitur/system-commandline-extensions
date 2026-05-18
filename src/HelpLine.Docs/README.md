@@ -41,20 +41,23 @@ This discovers embedded Markdown topics from the specified assembly and adds a `
 
 ```text
 > all topics
-  quick-start
-  concepts
-    measuring
+  boats
+    engines
+    rudders
+  cars
+    engines
+    wheels
 ```
 
-Topic content for a parent topic includes all of its descendant sections, so `--topic concepts` displays the `concepts` heading and everything below it (including `measuring`).
+Topic content for a parent topic includes all of its descendant sections, so `--topic boats` displays the `boats` heading and content as well as everything below it (including `engines` and `rudders`).
 
-When two topics share the same short name (e.g., a `## Overview` under both `# Cars` and `# Boats`), each `--topic` value is qualified with its parent — `cars-overview` and `boats-overview`. The chooser still shows the unqualified `overview` under each parent.
+When two topics share the same short name (e.g., an `## Engines` topic under both `# Cars` and `# Boats`), each `--topic` value is qualified with its parent — `cars-engines` and `boats-engines`. The chooser still shows the unqualified `engines` under each parent.
 
 ## 4. Use at runtime
 
 ```powershell
 sample docs list
-sample docs --topic getting-started
+sample docs --topic boats
 ```
 
 ## 5. Advanced usage

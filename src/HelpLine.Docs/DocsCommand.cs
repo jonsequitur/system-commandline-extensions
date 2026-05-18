@@ -10,14 +10,14 @@ namespace HelpLine.Docs;
 public sealed class DocsCommand : Command
 {
     public DocsCommand(DocsTopicCatalog catalog, MarkdownHelpRenderer? renderer = null)
-        : base("docs", "Displays Markdown documentation topics packaged with the application.")
+        : base("docs", "Displays detailed documentation by topic")
     {
         Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         Renderer = renderer ?? new MarkdownHelpRenderer();
         TopicOption = new DocsTopicOption(Catalog);
         AllOption = new Option<bool>("--all")
         {
-            Description = "Displays all documentation topics."
+            Description = "Displays all documentation topics"
         };
 
         Options.Add(TopicOption);

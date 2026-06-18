@@ -18,6 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Shared\ConsoleDetection.cs" Link="Shared\ConsoleDetection.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\artwork\package-icon.png" Pack="true" PackagePath="icon.png" Visible="false" />
   </ItemGroup>

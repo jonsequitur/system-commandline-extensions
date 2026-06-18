@@ -132,7 +132,7 @@ public sealed class PlainTextMarkdownVisitor : IMarkdownVisitor
     };
 
     private bool SupportsAnsi() =>
-        ReferenceEquals(_writer, Console.Out) && !Console.IsOutputRedirected;
+        ConsoleDetection.SupportsAnsi(_writer);
 
     private string Colorize(string text, bool bold, string colorCode)
     {

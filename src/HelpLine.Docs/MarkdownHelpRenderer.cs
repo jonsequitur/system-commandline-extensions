@@ -45,10 +45,8 @@ public sealed class MarkdownHelpRenderer
         Walk(document, visitor);
     }
 
-    private static bool ShouldUseSpectre(TextWriter writer)
-    {
-        return ReferenceEquals(writer, Console.Out) && !Console.IsOutputRedirected;
-    }
+    private static bool ShouldUseSpectre(TextWriter writer) =>
+        ConsoleDetection.ShouldUseSpectre(writer);
 
     private static void Walk(MarkdownDocument document, IMarkdownVisitor visitor)
     {
